@@ -9,6 +9,7 @@ const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 type Inference = [string, number][];
 
 export function analyzeImage(img: ImageReader, words: string[], contexts: Contexts) {
+  console.log('analyzeImage');
   return new Promise<WordSearch>(async (resolve, reject) => {
     const bw = BWImage.fromColor(img);
     const toFill = bw.copy();
@@ -40,6 +41,7 @@ export function analyzeImage(img: ImageReader, words: string[], contexts: Contex
 }
 
 async function analyzeBoxes(hiContrast: BWImage, boxes: number[][], words: string[], contexts: Contexts) {
+  console.log('analyzeBoxes')
   const cropBoxes = new Float32Array(boxes.length * 4);
   const EXTRA_PAD = 5;
   const w = hiContrast.width - 1;
@@ -69,9 +71,14 @@ async function analyzeBoxes(hiContrast: BWImage, boxes: number[][], words: strin
   const boxTensor: tf.Tensor<tf.Rank.R2> = tf.tensor(cropBoxes, [boxes.length, 4]);
   const boxIndicesTensor: tf.Tensor<tf.Rank.R1> = tf.tensor(boxIndices, [boxes.length]);
   const CROP_SIZE: [number, number] = [28, 28]
+  
+  console.log(1, hiContrast.height, hiContrast.width, 1);
+  console.log(boxes.length, 4);
+  console.log(boxes.length);
 
   // separate images of each letter and send them to tf model
   const resizedTensor = tf.image.cropAndResize(imageTensor, boxTensor, boxIndicesTensor, CROP_SIZE);
+  console.log(resizedTensor.shape);
   const letters = await infer(resizedTensor);
 
   // put boxes on box canvas
@@ -118,6 +125,7 @@ async function analyzeBoxes(hiContrast: BWImage, boxes: number[][], words: strin
 }
 
 function infer(t: tf.Tensor<tf.Rank.R4>) {
+  console.log('Inferring')
   return new Promise<Inference>(async (resolve, reject) => {
     const model = await tf.loadGraphModel('./models/bw_no_rotate/model.json');
     const out = model.predict(t) as tf.Tensor<tf.Rank>;
