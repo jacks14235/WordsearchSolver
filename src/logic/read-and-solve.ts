@@ -129,6 +129,7 @@ function infer(t: tf.Tensor<tf.Rank.R4>) {
   return new Promise<Inference>(async (resolve, reject) => {
     const model = await tf.loadGraphModel('./models/bw_no_rotate/model.json');
     const out = model.predict(t) as tf.Tensor<tf.Rank>;
+    console.log(out.shape);
     const ds = out.dataSync();
     const maxes = Array.from(tf.argMax(out, 1).dataSync());
     // scale output values linearly between 0 and 1
