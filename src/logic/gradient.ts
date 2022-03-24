@@ -12,4 +12,8 @@ export class Gradient {
     const r = (n - this.positions[index - 1]) / (this.positions[index] - this.positions[index - 1])
     return (this.stops[index - 1].map((c,i) => c + (this.stops[index][i] - c) * r));
   }
+
+  static stoplight() {
+    return new Gradient([[255, 127, 127], [255, 0, 0], [0, 255, 0]], [0, .5, 1]);
+  }
 }

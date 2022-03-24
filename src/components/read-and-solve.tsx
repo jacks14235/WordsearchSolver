@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ImageReader } from "../logic/image-reader";
 import { analyzeImage } from "../logic/read-and-solve";
 import englishwords from "../logic/usa2.json";
 import '../App.css';
 import { WordSearch } from "../logic/solver";
-import { resolve } from "dns";
-
+import Tesseract, { recognize } from "tesseract.js";
+import { Gradient } from "../logic/gradient";
 export type Contexts = {
   img: CanvasRenderingContext2D,
   box: CanvasRenderingContext2D,
@@ -61,6 +61,22 @@ export function WordsearchSolver() {
     };
     setLetterStyle(newLetterStyle)
   }, [lettersVisible, rescaleVal, letterOffset])
+
+  function readWords(e: React.ChangeEvent<HTMLInputElement>) {
+    if (e.target.files?.length && e.target.files.length > 0) {
+      const imgPath: string = URL.createObjectURL(e.target.files[0]);
+      console.log('REcognizing')
+      console.log(imgPath)
+      Tesseract.recognize(imgPath, 'eng')
+      .then(res => {
+        console.log(res);
+        setWordString(res.data.text);
+      })
+      .catch(err => console.log(err));
+    } else {
+      alert('Invalid file');
+    }
+  }
 
   function onFileInput(e: React.ChangeEvent<HTMLInputElement>) {
     const img = imgCanvas.current?.getContext('2d');
@@ -140,7 +156,9 @@ export function WordsearchSolver() {
       letterCtx.font = `bold ${fontSize}px Arial`;
       letterCtx.fillStyle = '#FF0077FF';
       const letters = puzzle.getLetters();
+      const g = Gradient.stoplight();
       puzzle.getBoxes().forEach((s, i) => {
+        letterCtx.fillStyle = `rgb(${g.eval(puzzle.getConfidence(i)).join(',')})`;
         letterCtx.fillText(letters[i][0], s[0], s[3]);
       });
     }
@@ -218,7 +236,11 @@ export function WordsearchSolver() {
   return (
     <div className='flex flex-col md:flex-row'>
       <div className='w-screen max-w-screen grid grid-flow-row justify-center md:justify-start p-4 md:w-1/5 md:flex flex-col items-start md:pl-4'>
+        <p className="text-white text-left text-sm">Choose an image of the puzzle</p>
         <input type='file' onChange={(e) => onFileInput(e)} />
+        <p className="text-white text-left text-sm">Choose an image of the words to find</p>
+        <input type='file' onChange={(e) => readWords(e)} />
+        <p className="text-white text-left text-sm">Or type the words to find below, or leave it blank to search for any words</p>
         <div className='w-2/3 mt-4 w-full max-w-xs flex'>
           <textarea className='border-none p-1 bg-blue-50 rounded-xl flex-grow' rows={3} value={wordString} onChange={(e) => setWordString(e.target.value)} />
           <button className='w-8 h-8 bg-blue-600 rounded-lg ml-3 self-end' onClick={reSolve}>✓</button>
@@ -230,10 +252,10 @@ export function WordsearchSolver() {
           puzzleWidth={changeLetterModal.puzzleWidth}
           close={(newLetter) => onChangeSumbit(newLetter)}
         />}
-        <button className={`py-1 rounded-xl px-2 my-2 md:my-4 max-w-xs bg-${imgVisible ? 'blue-600' : 'white'} hover:bg-blue-400 transform transition transition-color duration-300`} onClick={() => setImgVisible(!imgVisible)} >Toggle Image</button>
-        <button className={`py-1 rounded-xl px-2 my-2 md:my-4 max-w-xs bg-${boxesVisible ? 'blue-600' : 'white'} hover:bg-blue-400 transform transition transition-color duration-300`} onClick={() => setBoxesVisible(!boxesVisible)} >Toggle Boxes</button>
-        <button className={`py-1 rounded-xl px-2 my-2 md:my-4 max-w-xs bg-${linesVisible ? 'blue-600' : 'white'} hover:bg-blue-400 transform transition transition-color duration-300`} onClick={() => setLinesVisible(!linesVisible)} >Toggle Solutions</button>
-        <button className={`py-1 rounded-xl px-2 my-2 md:my-4 max-w-xs bg-${lettersVisible ? 'blue-600' : 'white'} hover:bg-blue-400 transform transition transition-color duration-300`} onClick={() => setLettersVisible(!lettersVisible)} >Toggle Letters</button>
+        <button className={`py-1 rounded-xl px-2 my-2 md:my-4 max-w-xs bg-${imgVisible ? 'blue-600' : 'gray-100'} hover:bg-blue-400 transform transition transition-color duration-300`} onClick={() => setImgVisible(!imgVisible)} >Toggle Image</button>
+        <button className={`py-1 rounded-xl px-2 my-2 md:my-4 max-w-xs bg-${boxesVisible ? 'blue-600' : 'gray-100'} hover:bg-blue-400 transform transition transition-color duration-300`} onClick={() => setBoxesVisible(!boxesVisible)} >Toggle Boxes</button>
+        <button className={`py-1 rounded-xl px-2 my-2 md:my-4 max-w-xs bg-${linesVisible ? 'blue-600' : 'gray-100'} hover:bg-blue-400 transform transition transition-color duration-300`} onClick={() => setLinesVisible(!linesVisible)} >Toggle Solutions</button>
+        <button className={`py-1 rounded-xl px-2 my-2 md:my-4 max-w-xs bg-${lettersVisible ? 'blue-600' : 'gray-100'} hover:bg-blue-400 transform transition transition-color duration-300`} onClick={() => setLettersVisible(!lettersVisible)} >Toggle Letters</button>
         <div className='flex flex-row justify-center'>
           <button className={`py-1 rounded-l-xl m-r-1 px-2 my-2 md:my-4 max-w-xs bg-blue-600 hover:bg-blue-400 transform transition transition-color duration-300`} onClick={() => setLetterOffset(letterOffset - 5)} >{'<'}</button>
           <button className={`py-1 rounded-r-xl m-l-1 px-2 my-2 md:my-4 max-w-xs bg-blue-600 hover:bg-blue-400 transform transition transition-color duration-300`} onClick={() => setLetterOffset(letterOffset + 5)} >{'>'}</button>
@@ -268,7 +290,7 @@ function ChangeLetterModal(props: {
     props.ctx.stroke();
     const fontSize = Math.floor(.5 * props.ctx.canvas.width / props.puzzleWidth);
     props.ctx.font = `bold ${fontSize}px Arial`;
-    props.ctx.fillStyle = '#FF0077FF';
+    props.ctx.fillStyle = '#2222FFFF';
     props.ctx.fillText(newLetter, props.box[0], props.box[2] + (props.box[3] - props.box[2]));
     props.close(newLetter);
   }

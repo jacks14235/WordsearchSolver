@@ -8,6 +8,7 @@ export class WordSearch {
     public width: number,
     public height: number,
     words: string[],
+    private confidences: number[],
     private boxes: number[][]) {
     this.letters = letters.map((l) => l.toUpperCase())
     this.words = words.map(m => m.toUpperCase()) || [];
@@ -31,6 +32,10 @@ export class WordSearch {
   getBoxCenter(x: number, y: number): [number, number] {
     const b = this.boxes[this.width * y + x]
     return [b[0] + (b[1] - b[0]) / 2, b[2] + (b[3] - b[2]) / 2];
+  }
+
+  getConfidence(i: number) {
+    return this.confidences[i] || 0;
   }
 
   // tells whether the given coordinate is inside a box,

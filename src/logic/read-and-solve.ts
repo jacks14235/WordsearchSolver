@@ -84,7 +84,7 @@ async function analyzeBoxes(hiContrast: BWImage, boxes: number[][], words: strin
   // put boxes on box canvas
   contexts.box.canvas.width = contexts.img.canvas.width;
   contexts.box.canvas.height = contexts.img.canvas.height;
-  const g = new Gradient([[255, 127, 127], [255, 0, 0], [0, 255, 0]], [0, .5, 1]);
+  const g = Gradient.stoplight();
   contexts.box.lineWidth = 5;
   boxes.forEach((b, i) => {
     contexts.box.strokeStyle = `rgb(${g.eval(letters[i][1]).join(',')})`;
@@ -98,9 +98,10 @@ async function analyzeBoxes(hiContrast: BWImage, boxes: number[][], words: strin
   while (boxes[width][0] < boxes[width + 1][0]) width++;
   width++;
   const height = boxes.length / width;
+  const confidences = letters.map(l => l[1]);
   console.log(width, height);
 
-  return new WordSearch(letters.map(l => l[0]), width, height, words, boxes);
+  return new WordSearch(letters.map(l => l[0]), width, height, words, confidences, boxes);
 
   // contexts.line.canvas.width = contexts.img.canvas.width;
   // contexts.line.canvas.height = contexts.img.canvas.height;
