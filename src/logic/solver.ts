@@ -12,6 +12,7 @@ export class WordSearch {
     private confidences: number[],
     private boxes: number[][]) {
     this.letters = letters.map((l) => l.toUpperCase())
+    this.words = ['as'].map(m => m.toUpperCase()) || []
     this.words = words.map(m => m.toUpperCase()) || [];
     this.tst = new TST();
     this.initTST();
@@ -41,9 +42,11 @@ export class WordSearch {
       for (let i = 0; i < line.length; i++) {
         this.tst.add(line, {x: x, y: i, dx: 0, dy: 1}, i);
       }
+      console.log(line)
       const reverse = Array.from(
         this.yieldLine(x, this.height - 1, [0, -1])
       ).join("");
+      console.log(reverse);
       for (let i = 0; i < reverse.length; i++) {
         this.tst.add(reverse, {x: x, y: this.height - i - 1, dx: 0, dy: -1}, i);
       }
@@ -114,7 +117,7 @@ export class WordSearch {
         solutions.push({
           word: word,
           start: [p.x, p.y],
-          end: [p.x + word.length * p.dx, p.y + word.length * p.dy],
+          end: [p.x + (word.length - 1) * p.dx, p.y + (word.length - 1) * p.dy],
           dir: [p.dx, p.dy]
         })
       })
