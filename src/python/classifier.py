@@ -41,16 +41,17 @@ def fix_training_data():
 
 
 def train():
-    data_dir = pathlib.Path('new_training_data/BW')
+    data_dir = pathlib.Path('./src/python/images/')
 
-    count = len(list((data_dir.glob('*/*.bmp'))))
+    count = len(list((data_dir.glob('*/*.png'))))
     print(count)
 
     batch_size = 32
     img_height = 28
     img_width = 28
 
-    train_ds = tf.keras.preprocessing.image_dataset_from_directory(
+
+    train_ds = tf.keras.utils.image_dataset_from_directory(
         data_dir,
         validation_split=0.2,
         subset="training",
@@ -60,7 +61,8 @@ def train():
         color_mode='grayscale'
     )
 
-    val_ds = tf.keras.preprocessing.image_dataset_from_directory(
+
+    val_ds = tf.keras.utils.image_dataset_from_directory(
         data_dir,
         validation_split=0.2,
         subset="validation",
@@ -130,14 +132,14 @@ def train():
 
 
 
-    epochs = 100
+    epochs = 20
     history = model.fit(
         train_ds,
         validation_data=val_ds,
         epochs=epochs,
     )
 
-    name = "bw_no_rotate_smaller"
+    name = "attempt_1"
     try:
         model.save('saved_models/'+name+'.h5')
     except:
@@ -197,3 +199,6 @@ def classify(filename):
     return alphabet[np.argmax(scores)]
 
     print(score)
+
+
+train()

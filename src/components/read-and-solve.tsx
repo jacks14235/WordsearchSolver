@@ -6,6 +6,7 @@ import '../App.css';
 import { WordSearch } from "../logic/solver";
 import Tesseract, { recognize } from "tesseract.js";
 import { Gradient } from "../logic/gradient";
+const  listReactFiles = require('list-react-files');
 export type Contexts = {
   img: CanvasRenderingContext2D,
   box: CanvasRenderingContext2D,
@@ -33,6 +34,7 @@ export function WordsearchSolver() {
   const [rescaleVal, setRescaleVal] = useState<number>(1);
   const [letterOffset, setLetterOffset] = useState<number>(0);
   const [letterStyle, setLetterStyle] = useState<any>();
+  const [modelName, setModelName] = useState<string>('./models/bw_no_rotate/model.json');
   const [changeLetterModal, setChangeLetterModal] = useState<{
     ctx: CanvasRenderingContext2D,
     index: number,
@@ -43,7 +45,7 @@ export function WordsearchSolver() {
 
   useEffect(() => {
     window.addEventListener('resize', rescale);
-    return (() => window.removeEventListener('resize', rescale))
+    return (() => window.removeEventListener('resize', rescale));
   }, [])
 
   useEffect(() => {
@@ -236,6 +238,16 @@ export function WordsearchSolver() {
   return (
     <div className='flex flex-col md:flex-row'>
       <div className='w-screen max-w-screen grid grid-flow-row justify-center md:justify-start p-4 md:w-1/5 md:flex flex-col items-start md:pl-4'>
+        <div className="flex flex-row">
+          {
+              ['public/models/bw_no_rotate/model.json', 'public/models/artificial/model.json']
+              .map(model => {
+                const inter = model.substring(0, model.lastIndexOf('/'));
+                const name = inter.substring(0, model.lastIndexOf('/') + 1);
+              return <button className=' h-8 bg-blue-600 rounded-lg ml-3 self-end ml-3' onClick={() => setModelName(model)}>{name}</button>
+            })
+          }
+        </div>
         <p className="text-white text-left text-sm">Choose an image of the puzzle</p>
         <input type='file' onChange={(e) => onFileInput(e)} />
         <p className="text-white text-left text-sm">Choose an image of the words to find</p>

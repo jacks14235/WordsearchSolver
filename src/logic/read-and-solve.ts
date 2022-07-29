@@ -4,11 +4,12 @@ import * as tf from '@tensorflow/tfjs';
 import { WordSearch } from "./solver";
 import { Gradient } from "./gradient";
 import { Contexts } from "../components/read-and-solve";
+import { model } from "@tensorflow/tfjs";
 
 const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 type Inference = [string, number][];
 
-export function analyzeImage(img: ImageReader, words: string[], contexts: Contexts) {
+export function analyzeImage(img: ImageReader, words: string[], contexts: Contexts, modelPath?: string) {
   console.log('analyzeImage');
   return new Promise<WordSearch>(async (resolve, reject) => {
     const bw = BWImage.fromColor(img);
@@ -35,12 +36,12 @@ export function analyzeImage(img: ImageReader, words: string[], contexts: Contex
     const filteredBoxes = boxes.filter((b) => b[3] - b[2] > maxHeight * 0.5);
 
     filteredBoxes.sort((a, b) => a[2] - b[2] > maxHeight ? 1 : a[0] - b[0])
-    const ws = await analyzeBoxes(hiContrast, filteredBoxes, words, contexts);
+    const ws = await analyzeBoxes(hiContrast, filteredBoxes, words, contexts, modelPath);
     resolve(ws);
   })
 }
 
-async function analyzeBoxes(hiContrast: BWImage, boxes: number[][], words: string[], contexts: Contexts) {
+async function analyzeBoxes(hiContrast: BWImage, boxes: number[][], words: string[], contexts: Contexts, modelPath?: string) {
   console.log('analyzeBoxes')
   const cropBoxes = new Float32Array(boxes.length * 4);
   const EXTRA_PAD = 5;
@@ -79,7 +80,7 @@ async function analyzeBoxes(hiContrast: BWImage, boxes: number[][], words: strin
   // separate images of each letter and send them to tf model
   const resizedTensor = tf.image.cropAndResize(imageTensor, boxTensor, boxIndicesTensor, CROP_SIZE);
   console.log(resizedTensor.shape);
-  const letters = await infer(resizedTensor);
+  const letters = await infer(resizedTensor, modelPath);
 
   // put boxes on box canvas
   contexts.box.canvas.width = contexts.img.canvas.width;
@@ -125,10 +126,10 @@ async function analyzeBoxes(hiContrast: BWImage, boxes: number[][], words: strin
   // })
 }
 
-function infer(t: tf.Tensor<tf.Rank.R4>) {
+function infer(t: tf.Tensor<tf.Rank.R4>, modelPath?: string) {
   console.log('Inferring')
   return new Promise<Inference>(async (resolve, reject) => {
-    const model = await tf.loadGraphModel('./models/bw_no_rotate/model.json');
+    const model = await tf.loadGraphModel(modelPath || './models/bw_no_rotate/model.json');
     const out = model.predict(t) as tf.Tensor<tf.Rank>;
     console.log(out.shape);
     const ds = out.dataSync();
