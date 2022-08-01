@@ -127,7 +127,7 @@ async function analyzeBoxes(hiContrast: BWImage, boxes: number[][], words: strin
 }
 
 function infer(t: tf.Tensor<tf.Rank.R4>, modelPath?: string) {
-  console.log('Inferring')
+  console.log('Inferring with ', modelPath)
   return new Promise<Inference>(async (resolve, reject) => {
     const model = await tf.loadGraphModel(modelPath || './models/bw_no_rotate/model.json');
     const out = model.predict(t) as tf.Tensor<tf.Rank>;

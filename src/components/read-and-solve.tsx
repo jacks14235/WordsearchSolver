@@ -6,7 +6,7 @@ import '../App.css';
 import { WordSearch } from "../logic/solver";
 import Tesseract, { recognize } from "tesseract.js";
 import { Gradient } from "../logic/gradient";
-const  listReactFiles = require('list-react-files');
+const listReactFiles = require('list-react-files');
 export type Contexts = {
   img: CanvasRenderingContext2D,
   box: CanvasRenderingContext2D,
@@ -19,6 +19,8 @@ export type ImageLetter = {
   letter: string,
 
 }
+
+const modelNames = ['public/models/bw_no_rotate/model.json', 'public/models/artificial/model.json']
 
 export function WordsearchSolver() {
   const imgCanvas = useRef<HTMLCanvasElement>(null);
@@ -34,7 +36,7 @@ export function WordsearchSolver() {
   const [rescaleVal, setRescaleVal] = useState<number>(1);
   const [letterOffset, setLetterOffset] = useState<number>(0);
   const [letterStyle, setLetterStyle] = useState<any>();
-  const [modelName, setModelName] = useState<string>('./models/bw_no_rotate/model.json');
+  const [modelIndex, setModelIndex] = useState<number>(0);
   const [changeLetterModal, setChangeLetterModal] = useState<{
     ctx: CanvasRenderingContext2D,
     index: number,
@@ -70,11 +72,11 @@ export function WordsearchSolver() {
       console.log('REcognizing')
       console.log(imgPath)
       Tesseract.recognize(imgPath, 'eng')
-      .then(res => {
-        console.log(res);
-        setWordString(res.data.text);
-      })
-      .catch(err => console.log(err));
+        .then(res => {
+          console.log(res);
+          setWordString(res.data.text);
+        })
+        .catch(err => console.log(err));
     } else {
       alert('Invalid file');
     }
@@ -107,7 +109,7 @@ export function WordsearchSolver() {
         console.log(idt)
         const imgRead = new ImageReader(image.width, image.height, idt)
         // set loading true
-        analyzeImage(imgRead, getWords(), contexts)
+        analyzeImage(imgRead, getWords(), contexts, modelNames[modelIndex])
           .then((ws) => {
             setPuzzle(ws);
           });
@@ -240,12 +242,12 @@ export function WordsearchSolver() {
       <div className='w-screen max-w-screen grid grid-flow-row justify-center md:justify-start p-4 md:w-1/5 md:flex flex-col items-start md:pl-4'>
         <div className="flex flex-row">
           {
-              ['public/models/bw_no_rotate/model.json', 'public/models/artificial/model.json']
-              .map(model => {
+            modelNames
+              .map((model, i) => {
                 const inter = model.substring(0, model.lastIndexOf('/'));
-                const name = inter.substring(0, model.lastIndexOf('/') + 1);
-              return <button className=' h-8 bg-blue-600 rounded-lg ml-3 self-end ml-3' onClick={() => setModelName(model)}>{name}</button>
-            })
+                const name = inter.substring(inter.lastIndexOf('/') + 1);
+                return <button className={`px-2 h-8 bg-blue-${modelIndex === i ? '600' : '400'} rounded-lg ml-3 self-end ml-3`} onClick={() => setModelIndex(i)}>{name}</button>
+              })
           }
         </div>
         <p className="text-white text-left text-sm">Choose an image of the puzzle</p>
