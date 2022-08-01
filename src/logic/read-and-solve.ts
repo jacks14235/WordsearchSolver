@@ -4,7 +4,6 @@ import * as tf from '@tensorflow/tfjs';
 import { WordSearch } from "./solver";
 import { Gradient } from "./gradient";
 import { Contexts } from "../components/read-and-solve";
-import { model } from "@tensorflow/tfjs";
 
 const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 type Inference = [string, number][];
@@ -29,7 +28,7 @@ export function analyzeImage(img: ImageReader, words: string[], contexts: Contex
         corners.b = 0;
         toFill.fillFromi(i, threshhold, corners, hiContrast)
         boxes.push([corners.l, corners.r, corners.t, corners.b])
-        c++
+        c ++;
       }
     }
     const maxHeight = boxes.reduce((max, i) => Math.max(max, i[3] - i[2]), 0);
@@ -129,7 +128,7 @@ async function analyzeBoxes(hiContrast: BWImage, boxes: number[][], words: strin
 function infer(t: tf.Tensor<tf.Rank.R4>, modelPath?: string) {
   console.log('Inferring with ', modelPath)
   return new Promise<Inference>(async (resolve, reject) => {
-    const model = await tf.loadGraphModel(modelPath || './models/bw_no_rotate/model.json');
+    const model = await tf.loadGraphModel('./models/bw_no_rotate/model.json');
     const out = model.predict(t) as tf.Tensor<tf.Rank>;
     console.log(out.shape);
     const ds = out.dataSync();

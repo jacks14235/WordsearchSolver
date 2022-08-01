@@ -6,7 +6,6 @@ import '../App.css';
 import { WordSearch } from "../logic/solver";
 import Tesseract, { recognize } from "tesseract.js";
 import { Gradient } from "../logic/gradient";
-const listReactFiles = require('list-react-files');
 export type Contexts = {
   img: CanvasRenderingContext2D,
   box: CanvasRenderingContext2D,
@@ -47,7 +46,7 @@ export function WordsearchSolver() {
 
   useEffect(() => {
     window.addEventListener('resize', rescale);
-    return (() => window.removeEventListener('resize', rescale));
+    return (() => window.removeEventListener('resize', rescale))
   }, [])
 
   useEffect(() => {

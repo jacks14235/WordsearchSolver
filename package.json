@@ -13,7 +13,6 @@
     "@types/react": "^17.0.37",
     "@types/react-dom": "^17.0.11",
     "@types/tesseract.js": "^2.0.0",
-    "list-react-files": "^0.2.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-scripts": "4.0.3",
