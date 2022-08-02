@@ -90,17 +90,6 @@
   max-width: 10rem;
 } */
 
-.change-letter-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
 .change-letter-modal > div {
   background-color: #444444;
   z-index: 20;

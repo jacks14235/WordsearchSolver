@@ -333,7 +333,7 @@ function ChangeLetterModal(props: {
   }
   if (scale !== undefined && left !== undefined) {
     return (
-      <div className="fixed z-50 flex flex-row justify-center items-center" style={{left, top, right, bottom}}>
+      <div className="absolute z-50 flex flex-row justify-center items-start" style={{left, top, right, bottom}}>
         <div className="border-4 rounded-lg border-blue-500 bg-black px-5 py-3" style={{transform: `scale(${scale})`}}>
           <p className="text-white my-2">Change "{props.letter}" to:</p>
           <form onSubmit={onSubmit}>
