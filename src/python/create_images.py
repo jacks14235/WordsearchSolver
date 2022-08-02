@@ -15,7 +15,7 @@ for i in range(len(letters)):
 
 resolution = (28, 28)
 padding = (2, 2)
-IMAGES_PER_FONT = 10
+IMAGES_PER_FONT = 15
 
 def create_image(num, letter, fontpath, blur=0):
     gray = 255 # random.randint(200, 255)

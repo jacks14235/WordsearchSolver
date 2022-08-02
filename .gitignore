@@ -23,3 +23,7 @@ yarn-error.log*
 
 /src/python/images/*
 /src/python/fonts/zips/*
+/src/python/*.png
+/src/python/*.jpg
+/src/python/*.jpeg
+/src/ptthon/saved_models/*

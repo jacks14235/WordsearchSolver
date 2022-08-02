@@ -19,7 +19,6 @@ export function analyzeImage(img: ImageReader, words: string[], contexts: Contex
     const threshhold = toFill.getAverageColor() - 25;
     const corners = { l: toFill.width, r: 0, t: toFill.height, b: 0 }
     const boxes = [];
-    let c = 0;
     for (let i = 0; i < nPixels; i++) {
       if (toFill.getPixeli(i) < threshhold) {
         corners.l = toFill.width;
@@ -28,13 +27,29 @@ export function analyzeImage(img: ImageReader, words: string[], contexts: Contex
         corners.b = 0;
         toFill.fillFromi(i, threshhold, corners, hiContrast)
         boxes.push([corners.l, corners.r, corners.t, corners.b])
-        c ++;
       }
     }
-    const maxHeight = boxes.reduce((max, i) => Math.max(max, i[3] - i[2]), 0);
-    const filteredBoxes = boxes.filter((b) => b[3] - b[2] > maxHeight * 0.5);
 
-    filteredBoxes.sort((a, b) => a[2] - b[2] > maxHeight ? 1 : a[0] - b[0])
+    // const maxHeight = boxes.reduce((max, i) => Math.max(max, i[3] - i[2]), 0);
+    // const filteredBoxes = boxes.filter((b) => b[3] - b[2] > maxHeight * 0.5);
+
+    const heightThreshold = 8;
+    const heights = boxes.map(box => box[3] - box[2]);
+    const maxHeight = Math.max(...heights);
+    const freqs = new Array(maxHeight + 1).fill(0);
+    heights.forEach(h => freqs[h]++);
+    console.log({freqs})
+    const argmax: [number, number] = freqs.reduce((maxes, freq, i) => freq > maxes[0] ? [freq, i] : maxes, [heights[0], 0]);
+    // choose boxes within heightThreshold of argmax height
+    const filteredBoxes = boxes.filter(b => argmax[1] - heightThreshold < b[3] - b[2] && b[3] - b[2] <= argmax[1] + heightThreshold);
+    console.log({maxHeight})
+    console.log({heights})
+    console.log({argmax})
+    console.log({filteredBoxes})
+    filteredBoxes.sort((a, b) => a[2] - b[2] > argmax[1] ? 1 : a[0] - b[0]);
+    console.log({filteredBoxes})
+    const newCanvas = hiContrast.toCanvas();
+    document.querySelector('.target')?.appendChild(newCanvas);
     const ws = await analyzeBoxes(hiContrast, filteredBoxes, words, contexts, modelPath);
     resolve(ws);
   })
@@ -94,6 +109,7 @@ async function analyzeBoxes(hiContrast: BWImage, boxes: number[][], words: strin
   });
 
   // find width and height of puzzle
+  console.log(boxes);
   let width = 0;
   while (boxes[width][0] < boxes[width + 1][0]) width++;
   width++;
@@ -128,7 +144,7 @@ async function analyzeBoxes(hiContrast: BWImage, boxes: number[][], words: strin
 function infer(t: tf.Tensor<tf.Rank.R4>, modelPath?: string) {
   console.log('Inferring with ', modelPath)
   return new Promise<Inference>(async (resolve, reject) => {
-    const model = await tf.loadGraphModel('./models/bw_no_rotate/model.json');
+    const model = await tf.loadGraphModel(modelPath || './models/bw_no_rotate/model.json');
     const out = model.predict(t) as tf.Tensor<tf.Rank>;
     console.log(out.shape);
     const ds = out.dataSync();

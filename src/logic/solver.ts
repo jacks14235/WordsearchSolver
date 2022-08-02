@@ -113,7 +113,6 @@ export class WordSearch {
       // answerMap.set(word, this.tst.get(word));
       const pos = this.tst.get(word);
       pos.forEach(p => {
-        const l = word.length;
         solutions.push({
           word: word,
           start: [p.x, p.y],
@@ -188,7 +187,7 @@ export class WordSearch {
   toString() {
     let sb = '';
     this.letters.forEach((l, i) => {
-      if (i !== 0 && i % this.width == 0) {
+      if (i !== 0 && i % this.width === 0) {
         sb += '\n'
       }
       sb += l + ' '

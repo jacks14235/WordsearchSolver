@@ -16,7 +16,6 @@ export class BWImage {
     let avg = 0;
     const colorData: Uint8ClampedArray = colorImage.getData().data;
     for (let i = 0; i < nPixels; i++) {
-      if (i == 14235) console.log((colorData[4 * i] + colorData[4 * i + 1] + colorData[4 * i + 2]))
       avg = Math.floor((colorData[4 * i] + colorData[4 * i + 1] + colorData[4 * i + 2]) / 3);
       sum += avg;
       bwData[i] = avg;
@@ -49,7 +48,7 @@ export class BWImage {
     this.data[x + this.width * y] = v;
   }
 
-  toCanvas() {
+  toClamped() {
     const buff = new Uint8ClampedArray(this.width * this.height * 4);
     for (var x = 0; x < this.width; x++) {
       for (var y = 0; y < this.height; y++) {
@@ -60,6 +59,14 @@ export class BWImage {
       }
     }
     return buff;
+  }
+
+  toCanvas(): HTMLCanvasElement {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    const imdata = new ImageData(this.toClamped(), this.width);
+    context?.putImageData(imdata, 0, 0);
+    return canvas;
   }
 
   copy() {

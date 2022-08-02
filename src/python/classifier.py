@@ -1,6 +1,7 @@
 # http://www.ee.surrey.ac.uk/CVSSP/demos/chars74k/
 # https://www.tensorflow.org/js/guide/conversion
 
+#conversion to tfjs: `tensorflowjs_converter --input_format=keras --output_format=tfjs_graph_model <input_file.h5> <output_dir>`
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,6 +16,8 @@ from tensorflow.keras.models import Sequential
 
 alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
 
+
+# not used with artificial data
 def fix_training_data():
     import os
     folders = os.listdir('./training_data/BW')
@@ -41,7 +44,7 @@ def fix_training_data():
 
 
 def train():
-    data_dir = pathlib.Path('new_training_data/BW')
+    data_dir = pathlib.Path('src/python/images')
 
     count = len(list((data_dir.glob('*/*.bmp'))))
     print(count)
@@ -130,14 +133,14 @@ def train():
 
 
 
-    epochs = 100
+    epochs = 25
     history = model.fit(
         train_ds,
         validation_data=val_ds,
         epochs=epochs,
     )
 
-    name = "bw_no_rotate_smaller"
+    name = "artificial"
     try:
         model.save('saved_models/'+name+'.h5')
     except:
@@ -197,3 +200,6 @@ def classify(filename):
     return alphabet[np.argmax(scores)]
 
     print(score)
+
+
+train()

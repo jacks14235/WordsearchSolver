@@ -4,7 +4,7 @@ import { analyzeImage } from "../logic/read-and-solve";
 import englishwords from "../logic/usa2.json";
 import '../App.css';
 import { WordSearch } from "../logic/solver";
-import Tesseract, { recognize } from "tesseract.js";
+import Tesseract from "tesseract.js";
 import { Gradient } from "../logic/gradient";
 export type Contexts = {
   img: CanvasRenderingContext2D,
@@ -19,7 +19,7 @@ export type ImageLetter = {
 
 }
 
-const modelNames = ['public/models/bw_no_rotate/model.json', 'public/models/artificial/model.json']
+const modelNames = ['./models/bw_no_rotate/model.json', './models/artificial/model.json']
 
 export function WordsearchSolver() {
   const imgCanvas = useRef<HTMLCanvasElement>(null);
@@ -118,8 +118,8 @@ export function WordsearchSolver() {
 
   function getWords() {
     const words = wordString.split(/[^a-zA-Z0-9]+/);
-    if (words[0] == '') words.splice(0, 1);
-    if (words[words.length - 1] == '') words.pop();
+    if (words[0] === '') words.splice(0, 1);
+    if (words[words.length - 1] === '') words.pop();
     if (words.length > 0) {
       console.log(words);
       return words;
@@ -232,7 +232,6 @@ export function WordsearchSolver() {
   }
 
   const toDisp = (b: boolean) => b ? 'block' : 'none';
-  const toColor = (b: boolean) => b ? 'orangered' : 'white';
 
   useEffect(() => console.log(letterOffset), [letterOffset])
 
@@ -280,6 +279,9 @@ export function WordsearchSolver() {
         <canvas className='absolute origin-top-center md:origin-top-left md:left-0' ref={boxCanvas} style={{ display: toDisp(boxesVisible), transform: `scale(${rescaleVal})` }}></canvas>
         <canvas className='absolute origin-top-center md:origin-top-left md:left-0' ref={lineCanvas} style={{ display: toDisp(linesVisible), transform: `scale(${rescaleVal})` }}></canvas>
         <canvas className='absolute origin-top-center md:origin-top-left md:left-0' ref={letterCanvas} onClick={e => canvasClick(e)} style={letterStyle}></canvas>
+      </div>
+      <div className="target">
+
       </div>
     </div>
   )
