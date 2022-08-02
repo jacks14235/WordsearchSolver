@@ -113,7 +113,7 @@ export class WordSearch {
         solutions.push({
           word: word,
           start: [p.x, p.y],
-          end: [p.x + word.length * p.dx, p.y + word.length * p.dy],
+          end: [p.x + (word.length - 1) * p.dx, p.y + (word.length - 1) * p.dy],
           dir: [p.dx, p.dy]
         })
       })
