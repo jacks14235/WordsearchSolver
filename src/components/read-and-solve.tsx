@@ -209,6 +209,7 @@ export function WordsearchSolver() {
 
   function canvasClick(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
     const canvas = letterCanvas.current;
+    console.log("CLIDKED")
     if (!canvas || !puzzle) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -251,7 +252,7 @@ export function WordsearchSolver() {
               .map((model, i) => {
                 const inter = model.substring(0, model.lastIndexOf('/'));
                 const name = inter.substring(inter.lastIndexOf('/') + 1);
-                return <button className={`px-2 h-8 bg-blue-${modelIndex === i ? '600' : '400'} rounded-lg ml-3 self-end ml-3`} onClick={() => setModelIndex(i)}>{name}</button>
+                return <button className={`py-1 rounded-xl px-2 my-2 mr-2 md:my-4 max-w-xs ${modelIndex === i ? 'bg-blue-600' : 'bg-white'} hover:bg-blue-400 transform transition transition-color duration-300`} onClick={() => setModelIndex(i)}>{name}</button>
               })
           }
         </div>
@@ -271,10 +272,10 @@ export function WordsearchSolver() {
           puzzleWidth={changeLetterModal.puzzleWidth}
           close={(newLetter) => onChangeSumbit(newLetter)}
         />}
-        <button className={`py-1 rounded-xl px-2 my-2 md:my-4 max-w-xs bg-${imgVisible ? 'blue-600' : 'gray-100'} hover:bg-blue-400 transform transition transition-color duration-300`} onClick={() => setImgVisible(!imgVisible)} >Toggle Image</button>
-        <button className={`py-1 rounded-xl px-2 my-2 md:my-4 max-w-xs bg-${boxesVisible ? 'blue-600' : 'gray-100'} hover:bg-blue-400 transform transition transition-color duration-300`} onClick={() => setBoxesVisible(!boxesVisible)} >Toggle Boxes</button>
-        <button className={`py-1 rounded-xl px-2 my-2 md:my-4 max-w-xs bg-${linesVisible ? 'blue-600' : 'gray-100'} hover:bg-blue-400 transform transition transition-color duration-300`} onClick={() => setLinesVisible(!linesVisible)} >Toggle Solutions</button>
-        <button className={`py-1 rounded-xl px-2 my-2 md:my-4 max-w-xs bg-${lettersVisible ? 'blue-600' : 'gray-100'} hover:bg-blue-400 transform transition transition-color duration-300`} onClick={() => setLettersVisible(!lettersVisible)} >Toggle Letters</button>
+        <button className={`py-1 rounded-xl px-2 my-2 md:my-4 max-w-xs ${imgVisible ? 'bg-blue-600' : 'bg-gray-100'} hover:bg-blue-400 transform transition transition-color duration-300`} onClick={() => setImgVisible(!imgVisible)} >Toggle Image</button>
+        <button className={`py-1 rounded-xl px-2 my-2 md:my-4 max-w-xs ${boxesVisible ? 'bg-blue-600' : 'bg-gray-100'} hover:bg-blue-400 transform transition transition-color duration-300`} onClick={() => setBoxesVisible(!boxesVisible)} >Toggle Boxes</button>
+        <button className={`py-1 rounded-xl px-2 my-2 md:my-4 max-w-xs ${linesVisible ? 'bg-blue-600' : 'bg-gray-100'} hover:bg-blue-400 transform transition transition-color duration-300`} onClick={() => setLinesVisible(!linesVisible)} >Toggle Solutions</button>
+        <button className={`py-1 rounded-xl px-2 my-2 md:my-4 max-w-xs ${lettersVisible ? 'bg-blue-600' : 'bg-gray-100'} hover:bg-blue-400 transform transition transition-color duration-300`} onClick={() => setLettersVisible(!lettersVisible)} >Toggle Letters</button>
         <div className='flex flex-row justify-center'>
           <button className={`py-1 rounded-l-xl m-r-1 px-2 my-2 md:my-4 max-w-xs bg-blue-600 hover:bg-blue-400 transform transition transition-color duration-300`} onClick={() => setLetterOffset(letterOffset - 5)} >{'<'}</button>
           <button className={`py-1 rounded-r-xl m-l-1 px-2 my-2 md:my-4 max-w-xs bg-blue-600 hover:bg-blue-400 transform transition transition-color duration-300`} onClick={() => setLetterOffset(letterOffset + 5)} >{'>'}</button>
@@ -286,7 +287,7 @@ export function WordsearchSolver() {
         {loading && <Sparkles width={canvasWidth * rescaleVal} height={canvasHeight * rescaleVal} count={40} />}
         <canvas className='absolute origin-top-center md:origin-top-left md:left-0' ref={boxCanvas} style={{ display: toDisp(boxesVisible), transform: `scale(${rescaleVal})` }}></canvas>
         <canvas className='absolute origin-top-center md:origin-top-left md:left-0' ref={lineCanvas} style={{ display: toDisp(linesVisible), transform: `scale(${rescaleVal})` }}></canvas>
-        <canvas className='absolute origin-top-center md:origin-top-left md:left-0' ref={letterCanvas} onClick={e => canvasClick(e)} style={letterStyle}></canvas>
+        <canvas className='absolute origin-top-center md:origin-top-left md:left-0 z-20' ref={letterCanvas} onClick={e => canvasClick(e)} style={letterStyle}></canvas>
       </div>
     </div>
   )
@@ -301,6 +302,22 @@ function ChangeLetterModal(props: {
   close: (newLetter?: string) => void
 }) {
   const [newLetter, setNewLetter] = useState<string>('');
+  const [scale, setScale] = useState<number>();
+  const [left, setLeft] = useState<number>();
+  const [top, setTop] = useState<number>();
+  const [right, setRight] = useState<number>();
+  const [bottom, setBottom] = useState<number>();
+
+  useEffect(() => {
+    console.log('scale', window.visualViewport.width / window.innerWidth);
+    console.log(window.visualViewport)
+    setScale(window.visualViewport.width / window.innerWidth);
+    setLeft(window.visualViewport.offsetLeft);
+    setTop(window.visualViewport.offsetTop);
+    setRight(window.innerWidth - (window.visualViewport.offsetLeft + window.visualViewport.width));
+    setBottom(window.innerHeight - (window.visualViewport.offsetTop + window.visualViewport.height));
+  }, []);
+
   function onSubmit() {
     console.log(props.box)
     props.ctx.beginPath();
@@ -314,18 +331,23 @@ function ChangeLetterModal(props: {
     props.ctx.fillText(newLetter, props.box[0], props.box[2] + (props.box[3] - props.box[2]));
     props.close(newLetter);
   }
-  return (
-    <div className='change-letter-modal'>
-      <div>
-        <p>Change "{props.letter}" to:</p>
-        <form onSubmit={onSubmit}>
-          <input autoFocus type='text' value={newLetter} onChange={e => setNewLetter(e.target.value[0]?.toUpperCase())}></input>
-          <div>
-            <button onClick={() => props.close()}>Cancel</button>
-            <button onClick={onSubmit} type='submit'>Submit</button>
-          </div>
-        </form>
+  if (scale !== undefined && left !== undefined) {
+    return (
+      <div className="fixed z-50 flex flex-row justify-center items-center" style={{left, top, right, bottom}}>
+        <div className="border-4 rounded-lg border-blue-500 bg-black px-5 py-3" style={{transform: `scale(${scale})`}}>
+          <p className="text-white my-2">Change "{props.letter}" to:</p>
+          <form onSubmit={onSubmit}>
+            <input className='pl-2 rounded-md' autoFocus type='text' value={newLetter} onChange={e => setNewLetter(e.target.value[0]?.toUpperCase())}></input>
+            <input type='submit' className="hidden" />
+            <div>
+              <button className='bg-blue-500 rounded-md px-3 py-1 mx-1 my-3' onClick={() => props.close()}>Cancel</button>
+              <button className='bg-blue-500 rounded-md px-3 py-1 mx-1 my-3' type='submit'>Submit</button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
-  )
+    )
+  } else {
+    return <></>
+  }
 }
