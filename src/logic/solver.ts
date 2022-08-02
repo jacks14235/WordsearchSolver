@@ -148,7 +148,6 @@ export class WordSearch {
 
   getBoxCenter(x: number, y: number): [number, number] {
     const b = this.boxes[this.width * y + x]
-    console.log(x,y)
     return [b[0] + (b[1] - b[0]) / 2, b[2] + (b[3] - b[2]) / 2];
   }
 
@@ -191,62 +190,6 @@ export class WordSearch {
     })
     return sb;
   }
-
-  // solve() {
-  //   const solutions: Solution[] = [];
-  //   let s;
-  //   let x, y;
-  //   this.letters.forEach((l, i) => {
-  //     this.words.forEach(w => {
-  //       x = i % this.width;
-  //       y = Math.floor(i / this.width)
-  //       s = this.checkWord(w, l, x, y)
-  //       if (s) {
-  //         solutions.push({
-  //           word: w,
-  //           start: this.getBoxCenter(x, y),
-  //           end: this.getBoxCenter(s[0], s[1])
-  //         })
-  //       }
-
-  //     })
-  //   })
-  //   return solutions;
-  // }
-
-  // checkWord(word: string, letter1: string, x: number, y: number): [number, number] | null {
-  //   if (letter1 != word[0])
-  //     return null
-  //   let ret: [number, number] | null = null;
-  //   ret = ret || this.checkLetter(word, 1, x, y, [-1, -1]);
-  //   ret = ret || this.checkLetter(word, 1, x, y, [-1, 0]);
-  //   ret = ret || this.checkLetter(word, 1, x, y, [-1, 1]);
-  //   ret = ret || this.checkLetter(word, 1, x, y, [0, -1]);
-  //   ret = ret || this.checkLetter(word, 1, x, y, [0, 1]);
-  //   ret = ret || this.checkLetter(word, 1, x, y, [1, -1]);
-  //   ret = ret || this.checkLetter(word, 1, x, y, [1, 0]);
-  //   ret = ret || this.checkLetter(word, 1, x, y, [1, 1]);
-  //   return ret;
-  // }
-
-
-  // checkLetter(word: string, index: number, x: number, y: number, vector: [number, number]): [number, number] | null {
-  //   const nx = x + vector[0];
-  //   const ny = y + vector[1];
-  //   if (index >= word.length) {
-
-  //     return [x, y];
-  //   }
-  //   if (nx < 0 || nx >= this.width || ny < 0 || ny >= this.height) {
-  //     return null;
-  //   }
-  //   if (this.getLetter(nx, ny) == word[index]) {
-  //     return this.checkLetter(word, index + 1, nx, ny, vector);
-  //   }
-  //   else {
-  //     return null;
-  //   }
-  // }
 }
 
 type PositionInfo = {

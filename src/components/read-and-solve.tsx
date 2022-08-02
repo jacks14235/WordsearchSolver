@@ -6,6 +6,7 @@ import '../App.css';
 import { WordSearch } from "../logic/solver";
 import Tesseract from "tesseract.js";
 import { Gradient } from "../logic/gradient";
+import { Sparkles } from "./sparkles";
 export type Contexts = {
   img: CanvasRenderingContext2D,
   box: CanvasRenderingContext2D,
@@ -36,6 +37,9 @@ export function WordsearchSolver() {
   const [letterOffset, setLetterOffset] = useState<number>(0);
   const [letterStyle, setLetterStyle] = useState<any>();
   const [modelIndex, setModelIndex] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [canvasWidth, setcanvasWidth] = useState<number>(0);
+  const [canvasHeight, setCanvasHeight] = useState<number>(0);
   const [changeLetterModal, setChangeLetterModal] = useState<{
     ctx: CanvasRenderingContext2D,
     index: number,
@@ -100,6 +104,8 @@ export function WordsearchSolver() {
         const h = (w / image.width) * image.height;
         img.canvas.width = image.width;
         img.canvas.height = image.height;
+        setcanvasWidth(image.width);
+        setCanvasHeight(image.height);
         rescale();
 
         img.drawImage(image, 0, 0, image.width, image.height)
@@ -107,7 +113,7 @@ export function WordsearchSolver() {
         const idt = img.getImageData(0, 0, image.width, image.height)
         console.log(idt)
         const imgRead = new ImageReader(image.width, image.height, idt)
-        // set loading true
+        setLoading(true);
         analyzeImage(imgRead, getWords(), contexts, modelNames[modelIndex])
           .then((ws) => {
             setPuzzle(ws);
@@ -165,6 +171,7 @@ export function WordsearchSolver() {
         letterCtx.fillText(letters[i][0], s[0], s[3]);
       });
     }
+    setLoading(false);
   }
 
   function reSolve() {
@@ -276,6 +283,7 @@ export function WordsearchSolver() {
       </div>
       <div className='flex flex-grow relative justify-center' style={{}}>
         <canvas className='absolute origin-top-center md:origin-top-left md:left-0' ref={imgCanvas} style={{ display: toDisp(imgVisible), transform: `scale(${rescaleVal})` }}></canvas>
+        {loading && <Sparkles width={canvasWidth} height={canvasHeight} count={77} />}
         <canvas className='absolute origin-top-center md:origin-top-left md:left-0' ref={boxCanvas} style={{ display: toDisp(boxesVisible), transform: `scale(${rescaleVal})` }}></canvas>
         <canvas className='absolute origin-top-center md:origin-top-left md:left-0' ref={lineCanvas} style={{ display: toDisp(linesVisible), transform: `scale(${rescaleVal})` }}></canvas>
         <canvas className='absolute origin-top-center md:origin-top-left md:left-0' ref={letterCanvas} onClick={e => canvasClick(e)} style={letterStyle}></canvas>
