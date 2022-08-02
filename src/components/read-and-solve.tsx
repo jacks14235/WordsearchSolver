@@ -281,15 +281,12 @@ export function WordsearchSolver() {
         </div>
         {/* </div> */}
       </div>
-      <div className='flex flex-grow relative justify-center' style={{}}>
+      <div className='flex relative justify-center' style={{}}>
         <canvas className='absolute origin-top-center md:origin-top-left md:left-0' ref={imgCanvas} style={{ display: toDisp(imgVisible), transform: `scale(${rescaleVal})` }}></canvas>
-        {loading && <Sparkles width={canvasWidth} height={canvasHeight} count={77} />}
+        {loading && <Sparkles width={canvasWidth * rescaleVal} height={canvasHeight * rescaleVal} count={40} />}
         <canvas className='absolute origin-top-center md:origin-top-left md:left-0' ref={boxCanvas} style={{ display: toDisp(boxesVisible), transform: `scale(${rescaleVal})` }}></canvas>
         <canvas className='absolute origin-top-center md:origin-top-left md:left-0' ref={lineCanvas} style={{ display: toDisp(linesVisible), transform: `scale(${rescaleVal})` }}></canvas>
         <canvas className='absolute origin-top-center md:origin-top-left md:left-0' ref={letterCanvas} onClick={e => canvasClick(e)} style={letterStyle}></canvas>
-      </div>
-      <div className="target">
-
       </div>
     </div>
   )

@@ -42,8 +42,6 @@ export function analyzeImage(img: ImageReader, words: string[], contexts: Contex
     // choose boxes within heightThreshold of argmax height
     const filteredBoxes = boxes.filter(b => argmax[1] - heightThreshold < b[3] - b[2] && b[3] - b[2] <= argmax[1] + heightThreshold);
     filteredBoxes.sort((a, b) => a[2] - b[2] > argmax[1] ? 1 : a[0] - b[0]);
-    const newCanvas = hiContrast.toCanvas();
-    document.querySelector('.target')?.appendChild(newCanvas);
     const ws = await analyzeBoxes(hiContrast, filteredBoxes, words, contexts, modelPath);
     resolve(ws);
   })
