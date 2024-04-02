@@ -3,6 +3,19 @@ import englishwords from "./usa2.json";
 
 type Solution = { word: string, start: [number, number], end: [number, number] }
 
+class DllNode {
+  public up: DllNode | null;
+  public down: DllNode | null;
+  public left: DllNode | null;
+  public right: DllNode | null;
+  constructor(public id: number) {
+    this.up = null;
+    this.down = null;
+    this.left = null;
+    this.right = null;
+  }
+}
+
 export class WordSearch {
   private letters: number[];
   private tree: FullTree;
@@ -104,14 +117,54 @@ export class WordSearch {
     path.pop();
   }
 
-  private *yieldLine(startX: number, startY: number, dirs: [number, number]) {
-    let x = startX,
-      y = startY;
-    while (x >= 0 && x < this.width && y >= 0 && y < this.height) {
-      yield this.letters[x + this.width * y];
-      x += dirs[0];
-      y += dirs[1];
+  public algorithmX(subsets: number[][], w?: number, h?:number) {
+    // initialize data structure
+    const width = w || this.width;
+    const height = h || this.height;
+    // doubly-linked nodes 
+    const nodes: Array<DllNode> = new Array();
+    const nLetters = width * height;
+    // stores 0 for present, 1 for not present
+    const values = new Uint8Array(subsets.length * nLetters);
+    for (let i = 0; i < subsets.length; i++) {
+      for (let j of subsets[i]) {
+        values[i * nLetters + j] = 1;
+      }
     }
+    const asdf = values.toString();
+    for (let i = 0; i < 4; i++) {
+      console.log(asdf.substring(8 * i, 8 * (i+1)))
+    }
+    let c = 0; 
+    // up and down connections
+    for (let i = 0; i < nLetters; i++) {
+      let start: DllNode | null = null;
+      let last: DllNode | null = null;
+      for (let j = 0; j < subsets.length; j++) {
+        const idx = j * nLetters + i;
+        if (values[idx] === 1) {
+          const node = new DllNode(idx);
+          nodes.push(node);
+          start = start || node;
+          node.up = last;
+          if (last !== null) {
+            last.down = node;
+            console.log('pointing ' + last.id + ' to ' + node.id)
+          }
+          last = node;
+        }
+      }
+      if (start === null) {
+        console.error('No subsets contain the value ' + i);
+        return [];
+      }
+      console.log(start, last)
+      start.up = last;
+      last!.down = start;
+      console.log('pointing ' + last!.id + ' to ' + start.id)
+    }
+    console.log(values)
+    console.log(nodes)
   }
 
   setWords(words: string[]) {
@@ -209,94 +262,6 @@ class FullTree {
   }
 }
 
-// class TSTNode {
-//   public childL: TSTNode | null = null;
-//   public childR: TSTNode | null = null;
-//   public childM: TSTNode | null = null;
-//   // is there a word that ends here?
-//   public end: boolean = false;
-//   constructor(public letter: string) {}
-
-//   public static createToBottom(
-//     s: string,
-//     index: number,
-//   ) {
-//     const newNode = new TSTNode(s[index]);
-//     if (index === s.length - 1) {
-//       newNode.end = true;
-//       return newNode;
-//     }
-//     newNode.childM = this.createToBottom(s, index + 1);
-//     return newNode;
-//   }
-// }
-
-// export class TST {
-//   private root: TSTNode | null = null;
-
-//   public get(s: string): boolean {
-//     if (!this.root) return false;
-//     return this.getRecurse(s, 0, this.root);
-//   }
-
-//   private getRecurse(
-//     s: string,
-//     index: number,
-//     curr: TSTNode
-//   ): boolean {
-//     if (curr.letter === s[index]) {
-//       if (index === s.length - 1) return curr.end;
-//       if (curr.childM) return this.getRecurse(s, index + 1, curr.childM);
-//       else return false;
-//     } else if (s[index] > curr.letter) {
-//       if (curr.childR) return this.getRecurse(s, index, curr.childR);
-//       else return false;
-//     } else {
-//       if (curr.childL) return this.getRecurse(s, index, curr.childL);
-//       else return false;
-//     }
-//   }
-
-//   public add(s: string, startIndex?: number) {
-//     if (!this.root)
-//       this.root = TSTNode.createToBottom(s, startIndex || 0);
-//     this.addRecurse(this.root, s, startIndex || 0);
-//   }
-
-//   private addRecurse(
-//     node: TSTNode,
-//     s: string,
-//     index: number,
-//   ) {
-//     if (s[index] === node.letter) {
-//       if (index === s.length - 1) {
-//         node.end = true;
-//         console.log("HERE");
-//         console.log(s)
-//         return;
-//       }
-//       this.addRecurse(
-//         node.childM ||
-//           (node.childM = TSTNode.createToBottom(s, index + 1)),
-//         s,
-//         index + 1
-//       );
-//     } else if (s[index] > node.letter) {
-//       if (node.childR) {
-//         this.addRecurse(node.childR, s, index);
-//       } else {
-//         node.childR = TSTNode.createToBottom(s, index);
-//       }
-//     } else {
-//       if (node.childL) {
-//         this.addRecurse(node.childL, s, index);
-//       } else {
-//         node.childL = TSTNode.createToBottom(s, index);
-//       }
-//     }
-//   }
-// }
-
 const board = 
 `
 T E D
@@ -321,26 +286,29 @@ export function testTST() {
   const test = new WordSearch(
     letters, 6, 8, englishwords, [0,0], []
   );
-  let solves: number[][] = [];
-  console.log("Searching for " + englishwords.length + " words.");
-  for (let i = 0; i < 6; i++) {
-    for (let j = 0; j < 8; j++) {
-      solves = [...solves, ...test.findWords(i, j)];
-      console.log(i, j);
-    }
-  }
-  console.log('found ' + solves.length + ' words!');
-  console.log(solves)
-  let solvedWords = solves.map(s => test.toWord(s));
-  console.log(solvedWords.sort((a: string, b: string) => b.length - a.length));
-  let max = 0;
-  let longest: number[] = [];
-  for (let s of solves) {
-    if (s.length > max) {
-      max = s.length;
-      longest = s
-    }
-  }
-  console.log("longest word: ", test.toWord(longest))
+  // let solves: number[][] = [];
+  // console.log("Searching for " + englishwords.length + " words.");
+  // for (let i = 0; i < 6; i++) {
+  //   for (let j = 0; j < 8; j++) {
+  //     solves = [...solves, ...test.findWords(i, j)];
+  //     console.log(i, j);
+  //   }
+  // }
+  // console.log('found ' + solves.length + ' words!');
+  // console.log(solves)
+  // let solvedWords = solves.map(s => test.toWord(s));
+  // console.log(solvedWords.sort((a: string, b: string) => b.length - a.length));
+  // let max = 0;
+  // let longest: number[] = [];
+  // for (let s of solves) {
+  //   if (s.length > max) {
+  //     max = s.length;
+  //     longest = s
+  //   }
+  // }
+  // console.log("longest word: ", test.toWord(longest));
+
+  test.algorithmX([[0,1,2],[1,3], [0,2], [3,1]], 2, 2);
+  
 }
 
