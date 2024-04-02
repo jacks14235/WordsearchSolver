@@ -3,8 +3,9 @@ import { add } from "@tensorflow/tfjs";
 type Solution = { word: string, start: [number, number], end: [number, number] }
 
 export class WordSearch {
-  private letters: string[];
-  private tst: TST;
+  private letters: number[];
+  private tree: FullTree;
+  private found: number[][];
   private words: string[];
   constructor(
     letters: string[],
@@ -13,19 +14,19 @@ export class WordSearch {
     words: string[],
     private confidences: number[],
     private boxes: number[][]) {
-
-    this.letters = letters.map((l) => l.toUpperCase())
-    this.words = words.map(w => w.toUpperCase()).filter(w => w.length > 3) || [];
-    this.tst = new TST();
+    this.found = new Array(0);
+    this.letters = letters.map((l) => l.toUpperCase()).map(l => l.charCodeAt(0) - 65);
+    this.tree = new FullTree();
+    this.words = words;
     
-    // Initialize tst
+    // Initialize tree
     for (let word of this.words) {
-      this.tst.add(word);
+      this.tree.add(word);
     }
 
-    if (this.letters.length !== this.boxes.length) {
-      throw new Error('Length mismatch between boxes and letters.');
-    }
+    // if (this.letters.length !== this.boxes.length) {
+    //   throw new Error('Length mismatch between boxes and letters.');
+    // }
   }
 
   public solve(): Solution[] {
@@ -35,6 +36,64 @@ export class WordSearch {
 
     const withBoxes: Solution[] = solutions.map(a => ({...a, start: this.getBoxCenter(...a.start), end: this.getBoxCenter(...a.end)}))
     return withBoxes;
+  }
+
+  getLetter(x: number, y: number) {
+    if (x < 0 || x >= this.width || y < 0 || y >= this.height) {
+      return -1;
+    }
+    return this.letters[this.width * y + x];
+  }
+
+  public findWords(x: number, y: number) {
+    const finds: number[][] = [];
+    console.log("root", this.tree.root)
+    this.findWordsRecurse(x, y, [], this.tree.root, finds);
+    return finds;
+  }
+
+  // path is the positions in the grid
+  private findWordsRecurse(x: number, y: number, path: number[], node: FullNode, finds: number[][]) {
+    const pos = this.width * y + x;
+    // return if letter already used
+    if (path.includes(pos)) return;
+    path.push(pos);
+    if (node.end) finds.push([...path]);
+    let l;
+    l = this.getLetter(x - 1, y - 1);
+    if (l && node.children[l] !== null) {
+      this.findWordsRecurse(x - 1, y - 1, path, node.children[l], finds);
+    }
+    l = this.getLetter(x, y - 1);
+    if (l && node.children[l] !== null) {
+      this.findWordsRecurse(x, y - 1, path, node.children[l], finds);
+    }
+    l = this.getLetter(x + 1, y - 1);
+    if (l && node.children[l] !== null) {
+      this.findWordsRecurse(x + 1, y - 1, path, node.children[l], finds);
+    }
+    l = this.getLetter(x - 1, y);
+    if (l && node.children[l] !== null) {
+      this.findWordsRecurse(x - 1, y, path, node.children[l], finds);
+    }
+    l = this.getLetter(x + 1, y);
+    if (l && node.children[l] !== null) {
+      this.findWordsRecurse(x + 1, y, path, node.children[l], finds);
+    }
+    l = this.getLetter(x - 1, y + 1);
+    if (l && node.children[l] !== null) {
+      this.findWordsRecurse(x - 1, y + 1, path, node.children[l], finds);
+    }
+    l = this.getLetter(x, y + 1);
+    if (l && node.children[l] !== null) {
+      this.findWordsRecurse(x, y + 1, path, node.children[l], finds);
+    }
+    l = this.getLetter(x + 1, y + 1);
+    if (l && node.children[l] !== null) {
+      this.findWordsRecurse(x + 1, y + 1, path, node.children[l], finds);
+    }
+
+    path.pop();
   }
 
   private *yieldLine(startX: number, startY: number, dirs: [number, number]) {
@@ -47,16 +106,12 @@ export class WordSearch {
     }
   }
 
-  getLetter(x: number, y: number) {
-    return this.letters[this.width * y + x];
-  }
-
   setWords(words: string[]) {
     this.words = words.map(w => w.toUpperCase());
   }
 
   changeLetter(i: number, l: string) {
-    this.letters[i] = l.toUpperCase();
+    this.letters[i] = l.toUpperCase().charCodeAt(0);
     // this.initTST();
   }
 
@@ -73,7 +128,7 @@ export class WordSearch {
   // returns the index of the box and the letter 
   // undefined if the coordinate is not in a box
   inBox(x: number, y: number): {index: number, letter: string, box: number[]} | undefined {
-    let r: {index: number, letter: string, box: number[]} | undefined = undefined;
+    let r: {index: number, letter: number, box: number[]} | undefined = undefined;
     this.boxes.forEach((box, i) => {
       if ((box[0] < x) && (x < box[1]) && (box[2] < y) && (y < box[3])) {
         r = {index: i, letter: this.letters[i], box};
@@ -112,22 +167,22 @@ class FullNode {
 }
 
 class FullTree {
-  private root = new FullNode();
+  public root = new FullNode();
   public add(s: string) {
     this.addRecurse(s, this.root, 0);
   }
   private addRecurse(s: string, node: FullNode, index: number) {
-    if (index === s.length - 1) {
+    // console.log(s, index);
+    if (index === s.length) {
       node.end = true;
-      console.log('End', s, index);
+      // console.log('End', s, index);
       return;
     }
     const c = s.charCodeAt(index) - 65;
     if (node.children[c] == null) {
       node.children[c] = new FullNode();
-    } else {
-      this.addRecurse(s, node.children[c], index + 1);
     }
+    this.addRecurse(s, node.children[c], index + 1);
   }
 
   public get(s: string): boolean {
@@ -135,102 +190,106 @@ class FullTree {
   }
 
   private getRecurse(s: string, node: FullNode, index: number): boolean {
-    if (index === s.length - 1) return node.end;
+    if (index === s.length) {
+      // console.log(s, index);
+      return node.end;
+    }
     const c = s.charCodeAt(index) - 65;
+    // console.log(s.charAt(index), !!node.children[c])
     if (node.children[c] == null) return false
     else return this.getRecurse(s, node.children[c], index + 1);
   }
 }
 
-class TSTNode {
-  public childL: TSTNode | null = null;
-  public childR: TSTNode | null = null;
-  public childM: TSTNode | null = null;
-  // is there a word that ends here?
-  public end: boolean = false;
-  constructor(public letter: string) {}
+// class TSTNode {
+//   public childL: TSTNode | null = null;
+//   public childR: TSTNode | null = null;
+//   public childM: TSTNode | null = null;
+//   // is there a word that ends here?
+//   public end: boolean = false;
+//   constructor(public letter: string) {}
 
-  public static createToBottom(
-    s: string,
-    index: number,
-  ) {
-    const newNode = new TSTNode(s[index]);
-    if (index === s.length - 1) {
-      newNode.end = true;
-      return newNode;
-    }
-    newNode.childM = this.createToBottom(s, index + 1);
-    return newNode;
-  }
-}
+//   public static createToBottom(
+//     s: string,
+//     index: number,
+//   ) {
+//     const newNode = new TSTNode(s[index]);
+//     if (index === s.length - 1) {
+//       newNode.end = true;
+//       return newNode;
+//     }
+//     newNode.childM = this.createToBottom(s, index + 1);
+//     return newNode;
+//   }
+// }
 
-export class TST {
-  private root: TSTNode | null = null;
+// export class TST {
+//   private root: TSTNode | null = null;
 
-  public get(s: string): boolean {
-    if (!this.root) return false;
-    return this.getRecurse(s, 0, this.root);
-  }
+//   public get(s: string): boolean {
+//     if (!this.root) return false;
+//     return this.getRecurse(s, 0, this.root);
+//   }
 
-  private getRecurse(
-    s: string,
-    index: number,
-    curr: TSTNode
-  ): boolean {
-    if (curr.letter === s[index]) {
-      if (index === s.length - 1) return curr.end;
-      if (curr.childM) return this.getRecurse(s, index + 1, curr.childM);
-      else return false;
-    } else if (s[index] > curr.letter) {
-      if (curr.childR) return this.getRecurse(s, index, curr.childR);
-      else return false;
-    } else {
-      if (curr.childL) return this.getRecurse(s, index, curr.childL);
-      else return false;
-    }
-  }
+//   private getRecurse(
+//     s: string,
+//     index: number,
+//     curr: TSTNode
+//   ): boolean {
+//     if (curr.letter === s[index]) {
+//       if (index === s.length - 1) return curr.end;
+//       if (curr.childM) return this.getRecurse(s, index + 1, curr.childM);
+//       else return false;
+//     } else if (s[index] > curr.letter) {
+//       if (curr.childR) return this.getRecurse(s, index, curr.childR);
+//       else return false;
+//     } else {
+//       if (curr.childL) return this.getRecurse(s, index, curr.childL);
+//       else return false;
+//     }
+//   }
 
-  public add(s: string, startIndex?: number) {
-    if (!this.root)
-      this.root = TSTNode.createToBottom(s, startIndex || 0);
-    this.addRecurse(this.root, s, startIndex || 0);
-  }
+//   public add(s: string, startIndex?: number) {
+//     if (!this.root)
+//       this.root = TSTNode.createToBottom(s, startIndex || 0);
+//     this.addRecurse(this.root, s, startIndex || 0);
+//   }
 
-  private addRecurse(
-    node: TSTNode,
-    s: string,
-    index: number,
-  ) {
-    if (s[index] === node.letter) {
-      if (index === s.length - 1) {
-        node.end = true;
-        console.log("HERE");
-        console.log(s)
-        return;
-      }
-      this.addRecurse(
-        node.childM ||
-          (node.childM = TSTNode.createToBottom(s, index + 1)),
-        s,
-        index + 1
-      );
-    } else if (s[index] > node.letter) {
-      if (node.childR) {
-        this.addRecurse(node.childR, s, index);
-      } else {
-        node.childR = TSTNode.createToBottom(s, index);
-      }
-    } else {
-      if (node.childL) {
-        this.addRecurse(node.childL, s, index);
-      } else {
-        node.childL = TSTNode.createToBottom(s, index);
-      }
-    }
-  }
-}
+//   private addRecurse(
+//     node: TSTNode,
+//     s: string,
+//     index: number,
+//   ) {
+//     if (s[index] === node.letter) {
+//       if (index === s.length - 1) {
+//         node.end = true;
+//         console.log("HERE");
+//         console.log(s)
+//         return;
+//       }
+//       this.addRecurse(
+//         node.childM ||
+//           (node.childM = TSTNode.createToBottom(s, index + 1)),
+//         s,
+//         index + 1
+//       );
+//     } else if (s[index] > node.letter) {
+//       if (node.childR) {
+//         this.addRecurse(node.childR, s, index);
+//       } else {
+//         node.childR = TSTNode.createToBottom(s, index);
+//       }
+//     } else {
+//       if (node.childL) {
+//         this.addRecurse(node.childL, s, index);
+//       } else {
+//         node.childL = TSTNode.createToBottom(s, index);
+//       }
+//     }
+//   }
+// }
 
-const test = 
+const board = 
 `
 T E D
 S R B
@@ -238,17 +297,11 @@ T A O
 `;
 
 export function testTST() {
-  const t = new FullTree();
-  t.add('dog')
-  t.add('doge')
-  t.add('doggy')
+  const letters = board.trim().split("").filter(i => !/\s/.test(i));
+  const test = new WordSearch(
+    letters, 3, 3, ['test', 'board'], [0,0], []
+  );
+  console.log(test.findWords(0, 0));
 
-  console.log(t.get('dog'));
-  console.log(t.get('doge'));
-  console.log(t.get('doggy'));
-
-  console.log(t.get('dogg'));
-  console.log(t.get('dogge'));
-  console.log(t.get('do'));
 }
 
