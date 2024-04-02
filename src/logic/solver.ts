@@ -1,4 +1,5 @@
-import { add } from "@tensorflow/tfjs";
+import { add, string } from "@tensorflow/tfjs";
+import englishwords from "./usa2.json";
 
 type Solution = { word: string, start: [number, number], end: [number, number] }
 
@@ -17,7 +18,7 @@ export class WordSearch {
     this.found = new Array(0);
     this.letters = letters.map((l) => l.toUpperCase()).map(l => l.charCodeAt(0) - 65);
     this.tree = new FullTree();
-    this.words = words;
+    this.words = words.filter(w => w.length > 3).map(w => w.toUpperCase());
     
     // Initialize tree
     for (let word of this.words) {
@@ -45,10 +46,16 @@ export class WordSearch {
     return this.letters[this.width * y + x];
   }
 
+  public toWord(letters: number[]) {
+    return letters.map(l => String.fromCharCode(this.letters[l] + 65)).join('');
+  }
+
   public findWords(x: number, y: number) {
     const finds: number[][] = [];
-    console.log("root", this.tree.root)
-    this.findWordsRecurse(x, y, [], this.tree.root, finds);
+    const firstLetter = this.getLetter(x, y);
+    const node = this.tree.root.children[firstLetter];
+    if (node === null) return [];
+    this.findWordsRecurse(x, y, [], node, finds);
     return finds;
   }
 
@@ -60,36 +67,37 @@ export class WordSearch {
     path.push(pos);
     if (node.end) finds.push([...path]);
     let l;
+
     l = this.getLetter(x - 1, y - 1);
-    if (l && node.children[l] !== null) {
+    if (l !== -1 && node.children[l] !== null) {
       this.findWordsRecurse(x - 1, y - 1, path, node.children[l], finds);
     }
     l = this.getLetter(x, y - 1);
-    if (l && node.children[l] !== null) {
+    if (l !== -1 && node.children[l] !== null) {
       this.findWordsRecurse(x, y - 1, path, node.children[l], finds);
     }
     l = this.getLetter(x + 1, y - 1);
-    if (l && node.children[l] !== null) {
+    if (l !== -1 && node.children[l] !== null) {
       this.findWordsRecurse(x + 1, y - 1, path, node.children[l], finds);
     }
     l = this.getLetter(x - 1, y);
-    if (l && node.children[l] !== null) {
+    if (l !== -1 && node.children[l] !== null) {
       this.findWordsRecurse(x - 1, y, path, node.children[l], finds);
     }
     l = this.getLetter(x + 1, y);
-    if (l && node.children[l] !== null) {
+    if (l !== -1 && node.children[l] !== null) {
       this.findWordsRecurse(x + 1, y, path, node.children[l], finds);
     }
     l = this.getLetter(x - 1, y + 1);
-    if (l && node.children[l] !== null) {
+    if (l !== -1 && node.children[l] !== null) {
       this.findWordsRecurse(x - 1, y + 1, path, node.children[l], finds);
     }
     l = this.getLetter(x, y + 1);
-    if (l && node.children[l] !== null) {
+    if (l !== -1 && node.children[l] !== null) {
       this.findWordsRecurse(x, y + 1, path, node.children[l], finds);
     }
     l = this.getLetter(x + 1, y + 1);
-    if (l && node.children[l] !== null) {
+    if (l !== -1 && node.children[l] !== null) {
       this.findWordsRecurse(x + 1, y + 1, path, node.children[l], finds);
     }
 
@@ -296,12 +304,43 @@ S R B
 T A O
 `;
 
-export function testTST() {
-  const letters = board.trim().split("").filter(i => !/\s/.test(i));
-  const test = new WordSearch(
-    letters, 3, 3, ['test', 'board'], [0,0], []
-  );
-  console.log(test.findWords(0, 0));
+const strands = `
+IDYREK
+RANECA
+YERSOB
+ZOYAER
+ERSFDG
+RFTOUO
+MOTOCR
+EASDEP
+`
 
+export function testTST() {
+  const letters = strands.trim().split("").filter(i => !/\s/.test(i));
+  
+  const test = new WordSearch(
+    letters, 6, 8, englishwords, [0,0], []
+  );
+  let solves: number[][] = [];
+  console.log("Searching for " + englishwords.length + " words.");
+  for (let i = 0; i < 6; i++) {
+    for (let j = 0; j < 8; j++) {
+      solves = [...solves, ...test.findWords(i, j)];
+      console.log(i, j);
+    }
+  }
+  console.log('found ' + solves.length + ' words!');
+  console.log(solves)
+  let solvedWords = solves.map(s => test.toWord(s));
+  console.log(solvedWords.sort((a: string, b: string) => b.length - a.length));
+  let max = 0;
+  let longest: number[] = [];
+  for (let s of solves) {
+    if (s.length > max) {
+      max = s.length;
+      longest = s
+    }
+  }
+  console.log("longest word: ", test.toWord(longest))
 }
 
