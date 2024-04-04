@@ -1,19 +1,51 @@
 import { add, string } from "@tensorflow/tfjs";
 import englishwords from "./usa2.json";
+const dlxlib = require('dlxlib');
 
 type Solution = { word: string, start: [number, number], end: [number, number] }
 
-class DllNode {
-  public up: DllNode | null;
-  public down: DllNode | null;
-  public left: DllNode | null;
-  public right: DllNode | null;
+class DlxNode {
+  public up: DlxNode | null;
+  public down: DlxNode | null;
+  public left: DlxNode | null;
+  public right: DlxNode | null;
   constructor(public id: number) {
     this.up = null;
     this.down = null;
     this.left = null;
     this.right = null;
   }
+
+  public removeRow(start?: DlxNode) {
+    if (start === this) return;
+    this.up!.down = this.down;
+    this.down!.up = this.up;
+    this.right?.removeRow(start || this);
+  }
+
+  public removeCol(start?: DlxNode) {
+    console.log(this);
+    console.log(this.left);
+    // if (start === this) return;
+    this.left!.right = this.right;
+    this.right!.left = this.left;
+    // this.down?.removeCol(start || this);
+  }
+
+  public restoreRow(start?: DlxNode) {
+    if (start === this) return;
+    this.up!.down = this;
+    this.down!.up = this;
+    this.right?.restoreRow(start || this);
+  }
+
+  public restoreCol(start?: DlxNode) {
+    if (start === this) return;
+    this.left!.right = this;
+    this.right!.left = this;
+    this.down?.restoreCol(start || this);
+  }
+
 }
 
 export class WordSearch {
@@ -121,8 +153,9 @@ export class WordSearch {
     // initialize data structure
     const width = w || this.width;
     const height = h || this.height;
-    // doubly-linked nodes 
-    const nodes: Array<DllNode> = new Array();
+    // doubly-linked nodes at the top of each column
+    const nodes = new Map<number, DlxNode>();
+    const headers= new Array<DlxNode>();
     const nLetters = width * height;
     // stores 0 for present, 1 for not present
     const values = new Uint8Array(subsets.length * nLetters);
@@ -135,36 +168,86 @@ export class WordSearch {
     for (let i = 0; i < 4; i++) {
       console.log(asdf.substring(8 * i, 8 * (i+1)))
     }
-    let c = 0; 
+    
+    const counts = new Array<number>(nLetters);
     // up and down connections
     for (let i = 0; i < nLetters; i++) {
-      let start: DllNode | null = null;
-      let last: DllNode | null = null;
+      let start: DlxNode | null = null;
+      let last: DlxNode | null = null;
+      let count = 0;
       for (let j = 0; j < subsets.length; j++) {
         const idx = j * nLetters + i;
         if (values[idx] === 1) {
-          const node = new DllNode(idx);
-          nodes.push(node);
+          const node = new DlxNode(idx);
           start = start || node;
           node.up = last;
           if (last !== null) {
             last.down = node;
-            console.log('pointing ' + last.id + ' to ' + node.id)
           }
           last = node;
+          nodes.set(idx, node);
+          count++;
         }
       }
       if (start === null) {
         console.error('No subsets contain the value ' + i);
         return [];
       }
-      console.log(start, last)
       start.up = last;
       last!.down = start;
-      console.log('pointing ' + last!.id + ' to ' + start.id)
+      headers.push(start);
+      counts[i] = count;
     }
-    console.log(values)
-    console.log(nodes)
+
+    // left and right connections
+    for (let i = 0; i < subsets.length; i++) {
+      let start: DlxNode | null = null;
+      let last: DlxNode | null = null;
+      for (let j = 0; j < nLetters; j++) {
+        const idx = i * nLetters + j;
+        const node = nodes.get(idx);
+        if (node) {
+          start = start || node;
+          node.left = last;
+          if (last !== null) {
+            last.right = node;
+          }
+          last = node;
+        }
+      }
+      if (start === null) continue;
+      start.left = last;
+      last!.right = start;
+    }
+    console.log(counts);
+
+    this.algorithmXRecurse(headers, argmin(counts), counts);
+  }
+
+  private algorithmXRecurse(headers: Array<DlxNode>, selection: number, counts: number[]) {
+    const start = headers[selection];
+    let curr = start;
+    // loop through node in selected column
+    do {
+      const removedRows = new Array<DlxNode>();
+      // for each node in this row
+      let curr_in_row = curr;
+      let start_in_row = curr;
+      do {
+        // go through column and remove their row
+        let curr_in_col = curr_in_row;
+        let start_in_col = curr_in_row;
+        do {
+          curr_in_col.removeRow();
+          curr_in_col = curr_in_col.down || start_in_col;
+          removedRows.push(curr_in_col);
+        } while (curr_in_col !== start_in_col);
+
+        curr_in_row = curr_in_row.right || start_in_row;
+      } while (curr_in_row !== start_in_row);
+
+      curr = curr.down || start;
+    } while (curr !== start)
   }
 
   setWords(words: string[]) {
@@ -220,6 +303,18 @@ export class WordSearch {
     })
     return sb;
   }
+}
+
+function argmin(n: number[]) {
+  let min = n[0];
+  let argmin = 0;
+  for (let i = 1; i < n.length; i++) {
+    if (n[i] < min) {
+      min = n[i];
+      argmin = i;
+    }
+  }
+  return argmin;
 }
 
 class FullNode {
@@ -308,7 +403,21 @@ export function testTST() {
   // }
   // console.log("longest word: ", test.toWord(longest));
 
-  test.algorithmX([[0,1,2],[1,3], [0,2], [3,1]], 2, 2);
+  // test.algorithmX([[0,1,2],[1,3], [0,2], [3,1]], 2, 2);
+
+  var matrix = [
+    [1, 0, 0, 0],
+    [0, 1, 1, 0],
+    [1, 0, 0, 1],
+    [0, 0, 1, 1],
+    [0, 1, 0, 0],
+    [0, 0, 1, 0]
+];
+  
+  var solutions = dlxlib.solve(matrix);
+  for (var i = 0; i < solutions.length; i++) {
+      console.log('solution[%d]: %s', i, JSON.stringify(solutions[i]));
+  }
   
 }
 
