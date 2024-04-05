@@ -80,7 +80,31 @@ export class WordSearch {
 
     const solutions: {word: string, start: [number, number], end: [number, number], dir: [number, number]}[] = [];
 
-    const withBoxes: Solution[] = solutions.map(a => ({...a, start: this.getBoxCenter(...a.start), end: this.getBoxCenter(...a.end)}))
+    const withBoxes: Solution[] = solutions.map(a => ({...a, start: this.getBoxCenter(...a.start), end: this.getBoxCenter(...a.end)}));
+
+    let solves: number[][] = [];
+    for (let i = 0; i < this.width; i++) {
+      for (let j = 0; j < this.height; j++) {
+        solves = [...solves, ...this.findWords(i, j)];
+      }
+    }
+    console.log(solves)
+    const matrix: number[][] = new Array(solves.length).fill(0).map(() => new Array(this.width * this.height).fill(0))
+    for (let i = 0; i < solves.length; i++) {
+      for (let j = 0; j < solves[i].length; j++) {
+        matrix[i][solves[i][j]] = 1;
+      }
+    }
+
+    var solutions1 = dlxlib.solve(matrix) as number[][];
+    console.log(solutions1)
+    console.log("Number of solutions", solutions1.length);
+    
+    for (let idx of solutions1[1]) {
+      const word = this.toWord(solves[idx]);
+      console.log(solves[idx])
+      console.log(word)
+    }
     return withBoxes;
   }
 
@@ -381,7 +405,8 @@ export function testTST() {
   const test = new WordSearch(
     letters, 6, 8, englishwords, [0,0], []
   );
-  // let solves: number[][] = [];
+  let solves: number[][] = [];
+  test.solve();
   // console.log("Searching for " + englishwords.length + " words.");
   // for (let i = 0; i < 6; i++) {
   //   for (let j = 0; j < 8; j++) {
@@ -403,21 +428,19 @@ export function testTST() {
   // }
   // console.log("longest word: ", test.toWord(longest));
 
-  // test.algorithmX([[0,1,2],[1,3], [0,2], [3,1]], 2, 2);
-
-  var matrix = [
-    [1, 0, 0, 0],
-    [0, 1, 1, 0],
-    [1, 0, 0, 1],
-    [0, 0, 1, 1],
-    [0, 1, 0, 0],
-    [0, 0, 1, 0]
-];
+  // var matrix = [
+  //   [1, 0, 0, 0],
+  //   [0, 1, 1, 0],
+  //   [1, 0, 0, 1],
+  //   [0, 0, 1, 1],
+  //   [0, 1, 0, 0],
+  //   [0, 0, 1, 0]
+  // ];
   
-  var solutions = dlxlib.solve(matrix);
-  for (var i = 0; i < solutions.length; i++) {
-      console.log('solution[%d]: %s', i, JSON.stringify(solutions[i]));
-  }
+  // var solutions = dlxlib.solve(matrix);
+  // for (var i = 0; i < solutions.length; i++) {
+  //     console.log('solution[%d]: %s', i, JSON.stringify(solutions[i]));
+  // }
   
 }
 
