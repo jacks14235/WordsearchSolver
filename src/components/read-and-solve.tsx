@@ -168,7 +168,7 @@ export function WordsearchSolver() {
       const g = Gradient.stoplight();
       puzzle.getBoxes().forEach((s, i) => {
         letterCtx.fillStyle = `rgb(${g.eval(puzzle.getConfidence(i)).join(',')})`;
-        letterCtx.fillText(String.fromCharCode(letters[i]), s[0], s[3]);
+        letterCtx.fillText(String.fromCharCode(letters[i] + 65), s[0], s[3]);
       });
     }
     setLoading(false);
@@ -307,17 +307,15 @@ function ChangeLetterModal(props: {
   const [bottom, setBottom] = useState<number>();
 
   useEffect(() => {
-    console.log(window.visualViewport)
-    console.log('scale', window.visualViewport?.width || 0 / window.innerWidth);
-    setScale(window.visualViewport?.width || 0 / window.innerWidth);
-    setLeft(window.visualViewport?.offsetLeft || 0);
-    setTop(window.visualViewport?.offsetTop || 0);
-    setRight(window.innerWidth - (window.visualViewport?.offsetLeft || 0 + (window.visualViewport?.width || 0)));
-    setBottom(window.innerHeight - (window.visualViewport?.offsetTop || 0 + (window.visualViewport?.height || 0)));
+    setScale((window.visualViewport?.width || 0) / window.innerWidth);
+    setLeft((window.visualViewport?.offsetLeft || 0));
+    setTop((window.visualViewport?.offsetTop || 0));
+    setRight(window.innerWidth - ((window.visualViewport?.offsetLeft || 0) + (window.visualViewport?.width || 0)));
+    setBottom(window.innerHeight - ((window.visualViewport?.offsetTop || 0) + (window.visualViewport?.height || 0)));
   }, []);
 
+
   function onSubmit() {
-    console.log(props.box)
     props.ctx.beginPath();
     props.ctx.clearRect(props.box[0], props.box[2],
       props.box[1] - props.box[0],

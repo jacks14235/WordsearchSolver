@@ -49,6 +49,29 @@ class DlxNode {
 
 }
 
+class SolutionSet {
+  constructor(
+    private letters: number[],
+    private words: number[][],
+    private solutions: number[][],
+    private scores: number[]
+  ) {};
+
+  private toWord(letters: number[]): string {
+    return letters.map(l => String.fromCharCode(this.letters[l] + 65)).join('');
+  }
+
+  public getSolution(ind: number) {
+    const sol = this.solutions[ind];
+    const words = [];
+    for (let wordIdx of sol) {
+      const word = this.toWord(this.words[wordIdx]);
+      words.push(word);
+    }
+    return words;
+  }
+}
+
 export class WordSearch {
   private letters: number[];
   private tree: FullTree;
@@ -131,9 +154,9 @@ export class WordSearch {
 
     const sorted = scores.sort((a, b) => b[1] - a[1]);
     for (let i = 0; i < 4; i++) {
+      console.log('====================');
       console.log('Score: ' + sorted[i][1]);
       const sol = found[sorted[i][0]];
-      console.log('====================');
       for (let wordIdx of sol) {
         const word = this.toWord(solves[wordIdx]);
         console.log(word);
