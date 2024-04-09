@@ -209,16 +209,13 @@ export function WordsearchSolver() {
 
   function canvasClick(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
     const canvas = letterCanvas.current;
-    console.log("CLIDKED")
     if (!canvas || !puzzle) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     const rect = canvas.getBoundingClientRect();
     const x = (e.clientX - (rect?.left || 0)) / rescaleVal;
     const y = (e.clientY - (rect?.top || 0)) / rescaleVal;
-    console.log(x, y)
     const clicked = puzzle?.inBox(x, y);
-    console.log(clicked);
     if (clicked) {
       setChangeLetterModal({
         ctx,
@@ -234,6 +231,7 @@ export function WordsearchSolver() {
     if (!changeLetterModal) return;
     if (newLetter) {
       puzzle?.changeLetter(changeLetterModal.index, newLetter);
+      console.log('resolving')
       reSolve();
     }
     setChangeLetterModal(undefined);
