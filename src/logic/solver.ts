@@ -1,5 +1,6 @@
-import { add, string } from "@tensorflow/tfjs";
+import { StringNGramsAttrs, add, string } from "@tensorflow/tfjs";
 import englishwords from "./usa2.json";
+import embed from './glove-twitter-25d.json';
 const dlxlib = require('dlxlib');
 
 type Solution = { word: string, start: [number, number], end: [number, number] }
@@ -96,15 +97,49 @@ export class WordSearch {
       }
     }
 
-    var solutions1 = dlxlib.solve(matrix) as number[][];
-    console.log(solutions1)
-    console.log("Number of solutions", solutions1.length);
-    
-    for (let idx of solutions1[1]) {
-      const word = this.toWord(solves[idx]);
-      console.log(solves[idx])
-      console.log(word)
+    var found = dlxlib.solve(matrix) as number[][];
+    console.log(found)
+    console.log("Number of solutions", found.length);
+
+    const map = new Map<string, number[]>(Object.entries(embed));
+    console.log(map.get('test'));
+    const scores = new Array<[number, number]>(found.length);
+    for (let idx = 0; idx < found.length; idx++) {
+      let avgSim = 0;
+      let count = 0;
+      for (let i = 1; i < found[idx].length; i++) {
+        const word1 = this.toWord(solves[found[idx][i]]);
+        const embed1 = map.get(word1);
+        if (!embed1) {
+          // console.log("Missing " + word1, embed1);
+          continue;
+        }
+        for (let j = 0; j < i; j++) {
+          const word2 = this.toWord(solves[found[idx][j]]);
+          const embed2 = map.get(word2);
+          if (!embed2) {
+            // console.log("Missing " + word2, embed2);
+            continue;
+          }
+          avgSim += cosSim(embed1, embed2);
+          count++;
+        }
+      }
+      avgSim /= count;
+      scores[idx] = [idx, avgSim];
     }
+
+    const sorted = scores.sort((a, b) => b[1] - a[1]);
+    for (let i = 0; i < 4; i++) {
+      console.log('Score: ' + sorted[i][1]);
+      const sol = found[sorted[i][0]];
+      console.log('====================');
+      for (let wordIdx of sol) {
+        const word = this.toWord(solves[wordIdx]);
+        console.log(word);
+      }
+    }
+    
     return withBoxes;
   }
 
@@ -388,25 +423,25 @@ S R B
 T A O
 `;
 
-const strands = `
-IDYREK
-RANECA
-YERSOB
-ZOYAER
-ERSFDG
-RFTOUO
-MOTOCR
-EASDEP
-`
+// const strands = `
+// IDYREK
+// RANECA
+// YERSOB
+// ZOYAER
+// ERSFDG
+// RFTOUO
+// MOTOCR
+// EASDEP
+// `
 
 export function testTST() {
-  const letters = strands.trim().split("").filter(i => !/\s/.test(i));
+  // const letters = strands.trim().split("").filter(i => !/\s/.test(i));
   
-  const test = new WordSearch(
-    letters, 6, 8, englishwords, [0,0], []
-  );
-  let solves: number[][] = [];
-  test.solve();
+  // const test = new WordSearch(
+  //   letters, 6, 8, englishwords, [0,0], []
+  // );
+  // let solves: number[][] = [];
+  // test.solve();
   // console.log("Searching for " + englishwords.length + " words.");
   // for (let i = 0; i < 6; i++) {
   //   for (let j = 0; j < 8; j++) {
@@ -444,3 +479,14 @@ export function testTST() {
   
 }
 
+function cosSim(a: number[], b: number[]) {
+  let dot = 0;
+  let asum = 0;
+  let bsum = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    asum += a[i] * a[i];
+    bsum += b[i] * b[i];
+  }
+  return dot / (Math.sqrt(asum) * Math.sqrt(bsum));
+}

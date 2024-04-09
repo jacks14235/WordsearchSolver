@@ -102,6 +102,15 @@ async function analyzeBoxes(hiContrast: BWImage, boxes: number[][], words: strin
   const height = boxes.length / width;
   const confidences = letters.map(l => l[1]);
   console.log(width, height);
+  const ls = letters.map(l => l[0]);
+  let s = '';
+  for (let i = 0; i < height; i++) {
+    for (let j = 0; j < width; j++) {
+      s += ls[i * width + j];
+    }
+    s += '\n';
+  }
+  console.log(s);
 
   return new WordSearch(letters.map(l => l[0]), width, height, words, confidences, boxes);
 }

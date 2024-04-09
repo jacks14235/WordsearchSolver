@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@craco/craco": "^6.4.2",
+    "@msgpack/msgpack": "^3.0.0-beta2",
     "@tensorflow/tfjs": "^3.11.0",
     "@testing-library/jest-dom": "^5.16.0",
     "@testing-library/react": "^11.2.7",
