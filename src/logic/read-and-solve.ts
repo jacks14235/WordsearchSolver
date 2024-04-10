@@ -38,7 +38,7 @@ export function analyzeImage(img: ImageReader, words: string[], contexts: Contex
     const maxHeight = Math.max(...heights);
     const freqs = new Array(maxHeight + 1).fill(0);
     heights.forEach(h => freqs[h]++);
-    const argmax: [number, number] = freqs.reduce((maxes, freq, i) => freq > maxes[0] ? [freq, i] : maxes, [heights[0], 0]);
+    const argmax: [number, number] = freqs.reduce((maxes, freq, i) => freq > maxes[0] ? [freq, i] : maxes, [-1, 0]);
     // choose boxes within heightThreshold of argmax height
     const filteredBoxes = boxes.filter(b => argmax[1] - heightThreshold < b[3] - b[2] && b[3] - b[2] <= argmax[1] + heightThreshold);
     filteredBoxes.sort((a, b) => a[2] - b[2] > argmax[1] ? 1 : a[0] - b[0]);
