@@ -5,6 +5,10 @@ const dlxlib = require('dlxlib');
 
 type Solution = { word: string, start: [number, number], end: [number, number] }
 
+export function myMod(a: number, b: number) {
+  return ((a % b) + b) % b;
+};
+
 class DlxNode {
   public up: DlxNode | null;
   public down: DlxNode | null;
@@ -49,7 +53,7 @@ class DlxNode {
 
 }
 
-class SolutionSet {
+export class SolutionSet {
   constructor(
     private letters: number[],
     private words: number[][],
@@ -61,14 +65,28 @@ class SolutionSet {
     return letters.map(l => String.fromCharCode(this.letters[l] + 65)).join('');
   }
 
-  public getSolution(ind: number) {
-    const sol = this.solutions[ind];
+  public getScore(ind: number) {
+    if (this.scores.length === 0) return 0;
+    return this.scores[myMod(ind, this.scores.length)];
+  }
+
+  // returns list of words (in string format)
+  public getSolution(ind: number): {words: string[], indices: number[][]} {
+    if (this.solutions.length === 0) return {words: [], indices: []};
+    const i = myMod(ind, this.solutions.length);
+    const sol = this.solutions[i];
     const words = [];
+    const indices = [];
     for (let wordIdx of sol) {
       const word = this.toWord(this.words[wordIdx]);
+      indices.push(this.words[wordIdx]);
       words.push(word);
     }
-    return words;
+    return {words, indices};
+  }
+
+  public length() {
+    return this.solutions.length;
   }
 }
 
@@ -99,46 +117,40 @@ export class WordSearch {
     // }
   }
 
-  public solve(): Solution[] {
-    // const answerMap = new Map<string, PositionInfo[]>();
+  public solve(): SolutionSet {
 
-    const solutions: {word: string, start: [number, number], end: [number, number], dir: [number, number]}[] = [];
-
-    const withBoxes: Solution[] = solutions.map(a => ({...a, start: this.getBoxCenter(...a.start), end: this.getBoxCenter(...a.end)}));
-
-    let solves: number[][] = [];
+    let wordsFound: number[][] = [];
     for (let i = 0; i < this.width; i++) {
       for (let j = 0; j < this.height; j++) {
-        solves = [...solves, ...this.findWords(i, j)];
+        wordsFound = [...wordsFound, ...this.findWords(i, j)];
       }
     }
-    console.log(solves)
-    const matrix: number[][] = new Array(solves.length).fill(0).map(() => new Array(this.width * this.height).fill(0))
-    for (let i = 0; i < solves.length; i++) {
-      for (let j = 0; j < solves[i].length; j++) {
-        matrix[i][solves[i][j]] = 1;
+    console.log(wordsFound)
+    const matrix: number[][] = new Array(wordsFound.length).fill(0).map(() => new Array(this.width * this.height).fill(0))
+    for (let i = 0; i < wordsFound.length; i++) {
+      for (let j = 0; j < wordsFound[i].length; j++) {
+        matrix[i][wordsFound[i][j]] = 1;
       }
     }
 
-    var found = dlxlib.solve(matrix) as number[][];
-    console.log(found)
-    console.log("Number of solutions", found.length);
+    var perfectCovers = dlxlib.solve(matrix) as number[][];
+    console.log("Number of solutions", perfectCovers.length);
 
     const map = new Map<string, number[]>(Object.entries(embed));
-    console.log(map.get('test'));
-    const scores = new Array<[number, number]>(found.length);
-    for (let idx = 0; idx < found.length; idx++) {
+
+    const scores = new Array<[number, number]>(perfectCovers.length);
+    for (let idx = 0; idx < perfectCovers.length; idx++) {
       let avgSim = 0;
       let count = 0;
-      for (let i = 1; i < found[idx].length; i++) {
-        const word1 = this.toWord(solves[found[idx][i]]);
+      for (let i = 1; i < perfectCovers[idx].length; i++) {
+        const word1 = this.toWord(wordsFound[perfectCovers[idx][i]]);
         const embed1 = map.get(word1);
         if (!embed1) {
           // console.log("Missing " + word1, embed1);
           continue;
         }
         for (let j = 0; j < i; j++) {
-          const word2 = this.toWord(solves[found[idx][j]]);
+          const word2 = this.toWord(wordsFound[perfectCovers[idx][j]]);
           const embed2 = map.get(word2);
           if (!embed2) {
             // console.log("Missing " + word2, embed2);
@@ -152,18 +164,22 @@ export class WordSearch {
       scores[idx] = [idx, avgSim];
     }
 
-    const sorted = scores.sort((a, b) => b[1] - a[1]);
+    // const sorted = scores.sort((a, b) => b[1] - a[1]);
+    const sorted = scores.sort((a, b) => b[1] - a[1])
+    const coversSorted = scores.map(i => perfectCovers[i[0]]);
     for (let i = 0; i < 4; i++) {
       console.log('====================');
       console.log('Score: ' + sorted[i][1]);
-      const sol = found[sorted[i][0]];
+      const sol = perfectCovers[sorted[i][0]];
       for (let wordIdx of sol) {
-        const word = this.toWord(solves[wordIdx]);
+        const word = this.toWord(wordsFound[wordIdx]);
         console.log(word);
       }
     }
+
+    const solutionSet = new SolutionSet(this.letters, wordsFound, coversSorted, sorted.map(i => i[1]));
     
-    return withBoxes;
+    return solutionSet;
   }
 
   getLetter(x: number, y: number) {
@@ -171,6 +187,10 @@ export class WordSearch {
       return -1;
     }
     return this.letters[this.width * y + x];
+  }
+
+  public getBox(ind: number) {
+    return this.boxes[ind];
   }
 
   public toWord(letters: number[]) {
@@ -346,6 +366,11 @@ export class WordSearch {
     return [b[0] + (b[1] - b[0]) / 2, b[2] + (b[3] - b[2]) / 2];
   }
 
+  getBoxCenterInd(ind: number) {
+    const b = this.boxes[ind]
+    return [b[0] + (b[1] - b[0]) / 2, b[2] + (b[3] - b[2]) / 2];
+  }
+
   getConfidence(i: number) {
     return this.confidences[i] || 0;
   }
@@ -361,10 +386,6 @@ export class WordSearch {
       }
     });
     return r;
-  }
-
-  getBoxes() {
-    return this.boxes;
   }
 
   getLetters() {

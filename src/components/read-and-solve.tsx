@@ -3,7 +3,7 @@ import { ImageReader } from "../logic/image-reader";
 import { analyzeImage } from "../logic/read-and-solve";
 import englishwords from "../logic/usa2.json";
 import '../App.css';
-import { WordSearch } from "../logic/solver";
+import { SolutionSet, WordSearch, myMod } from "../logic/solver";
 import Tesseract from "tesseract.js";
 import { Gradient } from "../logic/gradient";
 import { Sparkles } from "./sparkles";
@@ -27,6 +27,8 @@ export function WordsearchSolver() {
   const boxCanvas = useRef<HTMLCanvasElement>(null);
   const letterCanvas = useRef<HTMLCanvasElement>(null);
   const lineCanvas = useRef<HTMLCanvasElement>(null);
+  const [solutions, setSolutions] = useState<SolutionSet>();
+  const [solutionIndex, setSolutionIndex] = useState<number>(0);
   const [puzzle, setPuzzle] = useState<WordSearch>();
   const [wordString, setWordString] = useState<string>('');
   const [imgVisible, setImgVisible] = useState<boolean>(true);
@@ -54,8 +56,36 @@ export function WordsearchSolver() {
   }, [])
 
   useEffect(() => {
-    drawPuzzle();
+    if (!puzzle) return;
+    setSolutions(puzzle.solve())
   }, [puzzle])
+
+  useEffect(() => {
+    if (!(solutions && puzzle)) return;
+    const imgCtx = imgCanvas.current?.getContext('2d');
+    if (!imgCtx) return;
+
+    const lineCtx = lineCanvas.current?.getContext('2d');
+    lineCtx?.clearRect(0, 0, canvasWidth, canvasHeight);
+    if (lineCtx) {
+      lineCtx.canvas.width = imgCtx.canvas.width;
+      lineCtx.canvas.height = imgCtx.canvas.height;
+      lineCtx.lineWidth = 5;
+      lineCtx.strokeStyle = '#5555FFFF';
+      const solution = solutions.getSolution(solutionIndex);
+      solution.indices.forEach(word => {
+        lineCtx.beginPath();
+        const firstBox = puzzle.getBoxCenterInd(word[0]);
+        lineCtx.moveTo(firstBox[0], firstBox[1])
+        for (let letter of word) {
+          const box = puzzle.getBoxCenterInd(letter);
+          lineCtx.lineTo(box[0], box[1])
+        }
+        lineCtx.stroke();
+      })
+    }
+    setLoading(false);
+  }, [solutions, solutionIndex])
 
   function test() {
     return `scale(${rescaleVal}) translateX(${letterOffset}px)`
@@ -133,65 +163,10 @@ export function WordsearchSolver() {
     return englishwords.filter(w => w.length > 3);
   }
 
-  function drawPuzzle() {
-    if (!puzzle) return;
-    const solutions = puzzle.solve();
-    console.log(solutions);
-    console.log("Found", solutions.length, "words out of", puzzle.getWords().length)
-    console.log(puzzle.toString())
-
-    const imgCtx = imgCanvas.current?.getContext('2d');
-    if (!imgCtx) return;
-
-    const lineCtx = lineCanvas.current?.getContext('2d');
-    if (lineCtx) {
-      lineCtx.canvas.width = imgCtx.canvas.width;
-      lineCtx.canvas.height = imgCtx.canvas.height;
-      lineCtx.lineWidth = 5;
-      lineCtx.strokeStyle = '#5555FFFF';
-      solutions.forEach(s => {
-        lineCtx.beginPath();
-        lineCtx.moveTo(s.start[0], s.start[1])
-        lineCtx.lineTo(s.end[0], s.end[1])
-        lineCtx.stroke();
-      })
-    }
-
-    const letterCtx = letterCanvas.current?.getContext('2d');
-    if (letterCtx) {
-      const fontSize = Math.floor(.5 * imgCtx.canvas.width / puzzle.width);
-      letterCtx.canvas.width = imgCtx.canvas.width;
-      letterCtx.canvas.height = imgCtx.canvas.height;
-      letterCtx.font = `bold ${fontSize}px Arial`;
-      letterCtx.fillStyle = '#FF0077FF';
-      const letters = puzzle.getLetters();
-      const g = Gradient.stoplight();
-      puzzle.getBoxes().forEach((s, i) => {
-        letterCtx.fillStyle = `rgb(${g.eval(puzzle.getConfidence(i)).join(',')})`;
-        letterCtx.fillText(String.fromCharCode(letters[i] + 65), s[0], s[3]);
-      });
-    }
-    setLoading(false);
-  }
-
   function reSolve() {
     const words = getWords();
     puzzle?.setWords(words);
-    const solutions = puzzle?.solve();
-    console.log(solutions);
-    const lineCtx = lineCanvas.current?.getContext('2d');
-    if (!solutions) return;
-    lineCtx?.clearRect(0, 0, lineCtx.canvas.width, lineCtx.canvas.height);
-    if (lineCtx) {
-      lineCtx.lineWidth = 5;
-      lineCtx.strokeStyle = '#5555FFFF';
-      solutions.forEach(s => {
-        lineCtx.beginPath();
-        lineCtx.moveTo(s.start[0], s.start[1])
-        lineCtx.lineTo(s.end[0], s.end[1])
-        lineCtx.stroke();
-      })
-    }
+    setSolutions(puzzle?.solve());
   }
 
   function rescale() {
@@ -278,7 +253,21 @@ export function WordsearchSolver() {
           <button className={`py-1 rounded-l-xl m-r-1 px-2 my-2 md:my-4 max-w-xs bg-blue-600 hover:bg-blue-400 transform transition transition-color duration-300`} onClick={() => setLetterOffset(letterOffset - 5)} >{'<'}</button>
           <button className={`py-1 rounded-r-xl m-l-1 px-2 my-2 md:my-4 max-w-xs bg-blue-600 hover:bg-blue-400 transform transition transition-color duration-300`} onClick={() => setLetterOffset(letterOffset + 5)} >{'>'}</button>
         </div>
-        {/* </div> */}
+        <div className="text-white text-left">
+          <p className="font-bold">Solution {myMod(solutionIndex, solutions?.length() || 1) + 1}</p>
+          <div>
+            <p>{solutions && ('Score: ' + (solutions.getScore(solutionIndex) || 0).toFixed(3))}</p>
+            {
+              solutions?.getSolution(solutionIndex).words.map(sol => (
+                <p>{sol}</p>
+              ))
+            }
+            <div className='flex flex-row justify-start'>
+              <button className={`py-1 rounded-l-xl m-r-1 px-2 my-2 md:my-4 max-w-xs bg-blue-600 hover:bg-blue-400 transform transition transition-color duration-300`} onClick={() => setSolutionIndex(solutionIndex - 1)} >{'<'}</button>
+              <button className={`py-1 rounded-r-xl m-l-1 px-2 my-2 md:my-4 max-w-xs bg-blue-600 hover:bg-blue-400 transform transition transition-color duration-300`} onClick={() => setSolutionIndex(solutionIndex + 1)} >{'>'}</button>
+            </div>
+          </div>
+        </div>
       </div>
       <div className='flex relative justify-center' style={{}}>
         <canvas className='absolute origin-top-center md:origin-top-left md:left-0' ref={imgCanvas} style={{ display: toDisp(imgVisible), transform: `scale(${rescaleVal})` }}></canvas>
@@ -329,8 +318,8 @@ function ChangeLetterModal(props: {
   }
   if (scale !== undefined && left !== undefined) {
     return (
-      <div className="absolute z-50 flex flex-row justify-center items-start" style={{left, top, right, bottom}}>
-        <div className="border-4 rounded-lg border-blue-500 bg-black px-5 py-3" style={{transform: `scale(${scale})`}}>
+      <div className="absolute z-50 flex flex-row justify-center items-start" style={{ left, top, right, bottom }}>
+        <div className="border-4 rounded-lg border-blue-500 bg-black px-5 py-3" style={{ transform: `scale(${scale})` }}>
           <p className="text-white my-2">Change "{props.letter}" to:</p>
           <form onSubmit={onSubmit}>
             <input className='pl-2 rounded-md' autoFocus type='text' value={newLetter} onChange={e => setNewLetter(e.target.value[0]?.toUpperCase())}></input>
